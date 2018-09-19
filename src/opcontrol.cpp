@@ -1,33 +1,27 @@
 #include "main.h"
 
-using namespace pros::literals;
+using namespace pros;
 
-/**
- * Runs the operator control code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the operator
- * control mode.
- *
- * If no competition control is connected, this function will run immediately
- * following initialize().
- *
- * If the robot is disabled or communications is lost, the
- * operator control task will be stopped. Re-enabling the robot will restart the
- * task, not resume it from where it left off.
- */
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	auto left_mtr = 1_mtr;
-	pros::Motor right_mtr(2);
-	while (true) {
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-		int left = master.get_analog(ANALOG_LEFT_Y);
-		int right = master.get_analog(ANALOG_RIGHT_Y);
+  Controller master (E_CONTROLLER_MASTER);
+  //have to add these next lines for EVERY scope per instance of sensor use... ugh ok.
+  Motor example_motor (motorLFront_Port);
+  ADIEncoder encoderL (encoderLTop_Port, encoderLTop_Port);
+  ADIEncoder encoderR (encoderRTop_Port, encoderRTop_Port);
+  ADIEncoder encoderM (encoderMTop_Port, encoderMTop_Port);
 
-		left_mtr = left;
-		right_mtr = right;
-		pros::delay(20);
-	}
+  while (true) {
+	//analog stick test
+	example_motor = master.get_analog(E_CONTROLLER_ANALOG_LEFT_Y);
+	//digital button test
+	if(master.get_digital(E_CONTROLLER_DIGITAL_A))
+		example_motor = 127;
+	else example_motor = 0;
+	//digital button test & motorMove test
+	if(master.get_digital(E_CONTROLLER_DIGITAL_B))
+		example_motor.move(127);
+	else example_motor.move(0);
+	if(encoderR.get_value() > 100) example_motor = 50;
+    delay(2);
+  }
 }
