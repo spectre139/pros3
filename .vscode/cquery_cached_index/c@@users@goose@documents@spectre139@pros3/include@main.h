@@ -62,6 +62,24 @@
  * You can add C++-only headers here
  */
 //#include <iostream>
+/*
+extern adi_encoder_t leftEncoder;
+extern adi_encoder_t rightEncoder;
+extern adi_encoder_t middEncoder;
+*/
+//defining encoder ports:
+#define encoderLTop_Port  1
+#define encoderLBott_Port 2
+#define encoderRTop_Port  3
+#define encoderRBott_Port 4
+#define encoderMTop_Port  5
+#define encoderMBott_Port 6
+
+//defining motor ports:
+#define motorLFront_Port 1
+#define motorLRear_Port  2
+#define motorRFront_Port 3
+#define motorRRear_Port  4
 #endif
 
 #endif  // _PROS_MAIN_H_

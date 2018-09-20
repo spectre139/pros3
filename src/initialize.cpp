@@ -1,5 +1,5 @@
 #include "main.h"
-
+#include <string>
 using namespace pros;
 
 void on_center_button() {
@@ -29,6 +29,12 @@ void initialize() {
 	std::string text("PROS");
 	Task my_task(my_task_fn, &text);
 	lcd::register_btn1_cb(on_center_button);
+	while(true){
+		std::string a = "hello";
+		std::string motorEncoder = std::to_string((int)example_motor_initializer.get_position());
+		lcd::print(0, "motorEncoder: " + a);
+		delay(20);
+	}
 }
 
 void disabled() {}
