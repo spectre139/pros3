@@ -1,6 +1,10 @@
-#ifndef(ODOM_H)
+#ifndef ODOM_H
 #define ODOM_H
 
+void calculatePos(void* param);
+
+
+/*
 void calculatePos(void* param){
 	for(;;){
 
@@ -250,5 +254,5 @@ void tuneDistPID(float dist){
 
 	}
 }
-
+*/
 #endif

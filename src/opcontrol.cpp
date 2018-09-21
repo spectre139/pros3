@@ -6,44 +6,6 @@ using std::string;
 Controller master (E_CONTROLLER_MASTER);
 //have to add these next lines for EVERY scope per instance of sensor use... ugh ok.
 
-void calculatePos(void* param){
-    Robot* r = (Robot*) param;
-	for(;;){
-
-		float dR = encoderDistInch(r->encoderR.get_value())  - r->odom.lastR;//change in right encoder
-		float dL = encoderDistInch(r->encoderL.get_value())  - r->odom.lastL;//change in left
-		float dM = encoderDistInch(r->encoderM.get_value())  - r->odom.lastM;//change in middle
-
-		r->odom.lastR += dR;//updates "last" values
-		r->odom.lastL += dL;//updates "last" values
-		r->odom.lastM += dM;//updates "last" values
-
-		float dCentral = avg(dR, dL);//average of deltas
-		float dHeading = toDeg(dR - dL) / r->wheelWidth;//change in angle
-		float avgHeading = normAngle(r->pos.heading + dHeading / 2.0);  // Angle r is assumed to have been facing when moving dS.
-
-		float radHeading = boundAngle(toRad(avgHeading));
-		// Update current r position.
-		r->t_pos.heading += dHeading;
-		r->t_pos.X += dCentral * cos(radHeading) + dM * sin(radHeading);
-		r->t_pos.Y += dCentral * sin(radHeading) - dM * cos(radHeading);
-		//add little vector after calculating H mech's position
-		const float distToCenter = 2.18524;//inches the center of the H mech to the center of r's rotation
-		r->pos.heading = normAngle(r->t_pos.heading + 90);
-		r->pos.X = r->t_pos.X + distToCenter * cos(radHeading);
-		r->pos.Y = r->t_pos.Y + distToCenter * sin(radHeading) - distToCenter;
-		//little delays
-        delay(1);
-	}
-}
-void pidTest(void* param){
-    Robot* r = (Robot*) param;
-    while(false){
-        r->distPID.setGoal(506.5);
-        //LFrontBase = r->distPID.pidCompute(LFrontBase.get_position());
-        delay(20);
-    }
-}
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     while(true){
@@ -112,19 +74,10 @@ void opcontrol() {
       rob.driveLR(master.leftY, master.rightY);
       //rob.LFrontBase.move(clamp(127,-127, PIDPower));
            //debugs
-
-      string getFLywheelVel = string("motor1 Vel: ") + std::to_string(rob.sprocket1.get_actual_velocity());
-      lcd::print(0, getFLywheelVel.c_str());
-      string getFLywheel2Vel = string("motor2 Vel: ") + std::to_string(rob.sprocket2.get_actual_velocity());
-      lcd::print(1, getFLywheel2Vel.c_str());
-      string flywheelState;
-      if(rob.flyWheelVelPID.getRunningState())
-        flywheelState = string("PID Running: YES");
-      else
-        flywheelState = string("PID Running: NO");
-      lcd::print(3, flywheelState.c_str());
-      string flywheelGoal = string("PID Goal: ") + std::to_string(rob.flyWheelVelPID.getGoal());
-      lcd::print(4, flywheelGoal.c_str());
+     int i = 0;
+       for(const string& s : rob.debugString()){
+           lcd::print(i++, s.c_str());
+       }
 
     /* float error = rob.LFrontBase.get_position() - rob.distPID.getGoal();
      float PIDPower = rob.distPID.pidCompute(rob.LFrontBase.get_position());

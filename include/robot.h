@@ -1,8 +1,10 @@
-#if !defined(ROBOT_H)
+#ifndef ROBOT_H
 #define ROBOT_H
 #include "api.h"
+#include <string>
+#include <vector>
 
-using pros::Motor, pros::ADIEncoder;
+using pros::Motor, pros::ADIEncoder, std::string;
 
 #define encoderLTop_Port  1
 #define encoderLBott_Port 2
@@ -136,7 +138,7 @@ public:
           sprocket1, sprocket2, indexer;
     //sensors:
     ADIEncoder encoderL, encoderR, encoderM;
-
+public:
     void driveLR(int speedL, int speedR){//low level
         speedL = clamp(127, -127, speedL);
         speedR = clamp(127, -127, speedR);
@@ -164,12 +166,8 @@ public:
         sprocket1.move(clamp(127, -127, power));
         sprocket2.move(clamp(127, -127, power));
     }
-    void flywheelVelControl(int power){
-        sprocket1.move(clamp(127, -127, power));
-        sprocket2.move(clamp(127, -127, power));
-    }
     void flywheelPID(){//not rly pid but good enough
-        flywheelVelControl(flyWheelVelPID.getGoal());
+        flywheelControl(flyWheelVelPID.getGoal());
     }
     float getFlywheelVel(){
         return avg(sprocket1.get_actual_velocity(), sprocket2.get_actual_velocity());
@@ -179,6 +177,16 @@ public:
     }
     void indexerControl(int power){
         indexer.move(clamp(127, -127, power));
+    }
+    std::vector<string> debugString(){
+        std::vector<string> ret;
+        ret.push_back(string("Sprocket1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
+        ret.push_back(string("Sprocket2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
+        if(flyWheelVelPID.getRunningState()) ret.push_back(string("PID Running: YES"));
+        else ret.push_back(string("PID Running: NO"));
+        ret.push_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
+
+        return ret;
     }
 };
 //robot functions
