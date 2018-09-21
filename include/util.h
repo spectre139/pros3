@@ -52,5 +52,10 @@ static float encoderDistInch(int rawSensor){
 	const int gearRatio = 5;//5 to 1
 	return (rawSensor * PI * wheelDiam) / (countsPerRev * gearRatio);
 }
-
+static bool isWithinBounds(const float current, const float goal, const float thresh){
+	return ( abs(current - goal) < thresh );
+}
+static bool isWithinAngleBounds(const float current, const float goal, const float thresh){
+	return ( abs(normAngle(current - goal)) < thresh );
+}
 #endif

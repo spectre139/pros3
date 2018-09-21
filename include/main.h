@@ -39,6 +39,8 @@
 #include "api.h"
 #include <string>
 #include "util.h"
+#include "robot.h"
+//#include "odom.h"
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor,
