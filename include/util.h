@@ -3,6 +3,8 @@
 
 #define CW true
 #define CCW false
+#define ON true
+#define OFF false
 
 const float PI = 3.14159265359;
 
@@ -58,4 +60,24 @@ static bool isWithinBounds(const float current, const float goal, const float th
 static bool isWithinAngleBounds(const float current, const float goal, const float thresh){
 	return ( abs(normAngle(current - goal)) < thresh );
 }
+
+//easy button shortcuts
+#define btnL1 get_digital(E_CONTROLLER_DIGITAL_L1)
+#define btnL2 get_digital(E_CONTROLLER_DIGITAL_L2)
+#define btnR1 get_digital(E_CONTROLLER_DIGITAL_R1)
+#define btnR2 get_digital(E_CONTROLLER_DIGITAL_R2)
+#define btnA get_digital(E_CONTROLLER_DIGITAL_A)
+#define btnB get_digital(E_CONTROLLER_DIGITAL_B)
+#define btnX get_digital(E_CONTROLLER_DIGITAL_X)
+#define btnY get_digital(E_CONTROLLER_DIGITAL_Y)
+#define btnUP get_digital(E_CONTROLLER_DIGITAL_UP)
+#define btnDOWN get_digital(E_CONTROLLER_DIGITAL_DOWN)
+#define btnLEFT get_digital(E_CONTROLLER_DIGITAL_LEFT)
+#define btnRIGHT get_digital(E_CONTROLLER_DIGITAL_RIGHT)
+//analog sticks
+#define leftY get_analog(E_CONTROLLER_ANALOG_LEFT_Y)
+#define leftX get_analog(E_CONTROLLER_ANALOG_LEFT_X)
+#define rightY get_analog(E_CONTROLLER_ANALOG_RIGHT_Y)
+#define rightX get_analog(E_CONTROLLER_ANALOG_RIGHT_X)
+
 #endif
