@@ -37,7 +37,10 @@
 #define PROS_USE_LITERALS
 
 #include "api.h"
-
+#include <string>
+#include "util.h"
+#include "robot.h"
+#include "odom.h"
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor,
@@ -70,8 +73,10 @@ extern adi_encoder_t middEncoder;
 //defining encoder ports:
 #define encoderLTop_Port  1
 #define encoderLBott_Port 2
+
 #define encoderRTop_Port  3
 #define encoderRBott_Port 4
+
 #define encoderMTop_Port  5
 #define encoderMBott_Port 6
 
@@ -80,6 +85,12 @@ extern adi_encoder_t middEncoder;
 #define motorLRear_Port  2
 #define motorRFront_Port 3
 #define motorRRear_Port  4
+
+#define sprocket1_Port   5
+#define sprocket2_Port   6
+
+#define indexer_Port     7
+
 #endif
 
 #endif  // _PROS_MAIN_H_

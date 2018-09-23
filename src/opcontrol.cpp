@@ -23,7 +23,7 @@ void flywheelControl(void* param){//task test for flywheel PID
             r->enableFlywheelPID(ON);
             r->flywheelPID();
         }
-        delay(50);
+        delay(20);
     }
 }
 void buttonTask(void* param){//task test for flywheel PID
@@ -41,7 +41,7 @@ void buttonTask(void* param){//task test for flywheel PID
             r->flyWheelVelPID.setGoal(0);//==0
             delay(100);
         }
-        r->flyWheelVelPID.setGoal(clamp(127, -127, r->flyWheelVelPID.getGoal()));//clamps goal
+        r->flyWheelVelPID.setGoal(clamp(200, -200, r->flyWheelVelPID.getGoal()));//clamps goal
         delay(50);
     }
 }
