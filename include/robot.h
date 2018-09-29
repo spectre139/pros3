@@ -15,6 +15,9 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderMTop_Port  5
 #define encoderMBott_Port 6
 
+#define encoderFlywheelTop  7
+#define encoderFlywheelBott 8
+
 //defining motor ports:
 #define motorLFront_Port 1
 #define motorLRear_Port  2
@@ -58,29 +61,30 @@ private:
 public:
 	float pidCompute(float current) {
         if(isRunning){
-    		error = current - goal;//calculate error
-    		int dir = 1;
-    		float power = 0;
-    		if (isReversed) dir = -1;
-    		const float untilIntegral = thresh * 7;//considered "low threshold"
-    		// calculate the integral
-    		if (kI != 0.0) {//calculates integral (only at very end)
-    			if (fabs(error) < untilIntegral) Integral += error;//used for averaging the integral amount, later in motor power divided by 25
-    			else Integral = 0.0;
-    			power += kI * limUpTo(50, Integral);
-    		}
-    		else Integral = 0.0;
-    		// calculate the derivative
-    		if (kD != 0.0) {
-    			Derivative = error - LastError;//change in errors
-    			LastError = error;
-    		}
-    		else Derivative = 0.0;
-    		power += kD * Derivative;
-    		//final proportional output
-    		power += kP * error;
-    		return dir * power;
+	    		error = current - goal;//calculate error
+	    		int dir = 1;
+	    		float power = 0;
+	    		if (isReversed) dir = -1;
+	    		const float untilIntegral = thresh * 7;//considered "low threshold"
+	    		// calculate the integral
+	    		if (kI != 0.0) {//calculates integral (only at very end)
+	    			if (fabs(error) < untilIntegral) Integral += error;//used for averaging the integral amount, later in motor power divided by 25
+	    			else Integral = 0.0;
+	    			power += kI * limUpTo(50, Integral);
+	    		}
+	    		else Integral = 0.0;
+	    		// calculate the derivative
+	    		if (kD != 0.0) {
+	    			Derivative = error - LastError;//change in errors
+	    			LastError = error;
+	    		}
+	    		else Derivative = 0.0;
+	    		power += kD * Derivative;
+	    		//final proportional output
+	    		power += kP * error;
+	    		return dir * power;
         }
+				return 0;
 	}
 	float pidComputeAngle(float currentAngle) {//assuming everything is in ANGLES
         if(isRunning){
@@ -121,23 +125,34 @@ public:
 class Robot{
 public:
     //CONSTRUCTOR:
-	Robot( Position primaryPos, Position trackers, Odometry o, PIDcontroller a, PIDcontroller d, PIDcontroller fw, float ww) :
-    pos(primaryPos), t_pos(trackers), odom(o), anglePID(a), distPID(d), flyWheelVelPID(fw), wheelWidth(ww),
+	Robot( Position primaryPos, Position trackers, Odometry o, PIDcontroller a, PIDcontroller d, PIDcontroller fw, PIDcontroller iPID, float ww) :
+    pos(primaryPos), t_pos(trackers), odom(o), anglePID(a), distPID(d), flyWheelVelPID(fw), indexerPID(iPID), wheelWidth(ww),
     //motors:
     LFrontBase(motorLFront_Port), LRearBase(motorLRear_Port), RFrontBase(motorRFront_Port), RRearBase (motorRRear_Port),
     sprocket1 (sprocket1_Port), sprocket2 (sprocket2_Port), indexer(indexer_Port),
     //sensors:
-    encoderL (encoderLTop_Port, encoderLTop_Port), encoderR (encoderRTop_Port, encoderRTop_Port), encoderM (encoderMTop_Port, encoderMTop_Port)
-    {}
+    encoderL (encoderLTop_Port, encoderLBott_Port, true),
+		encoderR (encoderRTop_Port, encoderRBott_Port, false),
+		encoderM (encoderMTop_Port, encoderMBott_Port, true),
+		flywheelEnc (encoderFlywheelTop, encoderFlywheelBott, false)
+    {
+			encoderL.reset();
+			encoderR.reset();
+			encoderM.reset();
+			flywheelEnc.reset();
+
+		}
 	Position pos, t_pos;//tpos being the position of the trackers, not robot
 	Odometry odom;
-	PIDcontroller anglePID, distPID, flyWheelVelPID;
+	PIDcontroller anglePID, distPID, flyWheelVelPID, indexerPID;
 	float wheelWidth;//distance b/w L & R tracker wheels (inches)
+	float lastFlywheelVel = 0;
+	float flywheelVel = 0;
     //motors:
     Motor LFrontBase, LRearBase, RFrontBase, RRearBase,
           sprocket1, sprocket2, indexer;
     //sensors:
-    ADIEncoder encoderL, encoderR, encoderM;
+    ADIEncoder encoderL, encoderR, encoderM, flywheelEnc;
 public:
     void driveLR(int speedL, int speedR){//low level
         speedL = clamp(127, -127, speedL);
@@ -167,14 +182,20 @@ public:
         sprocket2.move(clamp(127, -127, power));
     }
 		void flywheelVelControl(int vel){
-					sprocket1.move_velocity(clamp(200, -200, vel));
-					sprocket2.move_velocity(clamp(200, -200, vel));
+				sprocket1.move_velocity(clamp(200, -200, vel));
+				sprocket2.move_velocity(clamp(200, -200, vel));
 		}
     void flywheelPID(){//not rly pid but good enough
-        flywheelVelControl(flyWheelVelPID.getGoal());
+      	flywheelVelControl(flyWheelVelPID.getGoal());
     }
-    float getFlywheelVel(){
-        return avg(sprocket1.get_actual_velocity(), sprocket2.get_actual_velocity());
+		void indexerPIDMove(int goal){
+			indexerPID.setGoal(goal);
+			indexerControl(indexerPID.pidCompute(indexer.get_position()));
+		}
+    float getFlywheelVel(float delayAmnt){
+			float velocity = ( flywheelEnc.get_value() - lastFlywheelVel) / (delayAmnt / 1000.0);
+			lastFlywheelVel = flywheelEnc.get_value();
+			return velocity / 2.0; //(converting ticks/sec to rot/min)
     }
     void enableFlywheelPID(bool state){
         flyWheelVelPID.setRunningState(state);
@@ -182,18 +203,35 @@ public:
     void indexerControl(int power){
         indexer.move(clamp(127, -127, power));
     }
+		void ploomp(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
+			int startingPos = indexer.get_position();
+			while(abs(indexer.get_position() - startingPos) < amntTicks){
+				indexerControl(127);
+			}
+			indexerControl(-127);
+			pros::delay(10);
+			indexerControl(0);
+		}
     std::vector<string> debugString(){
         std::vector<string> ret;
 				ret.push_back(string("BATTERY:") + std::to_string( pros::battery::get_capacity()));
-				ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
+				/*ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
 				ret.push_back(string("Flywheel1 Temp:") + std::to_string(sprocket1.get_temperature()));
         ret.push_back(string("Flywheel2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
 				ret.push_back(string("Flywheel2 Temp:") + std::to_string(sprocket2.get_temperature()));
 				if(flyWheelVelPID.getRunningState()) ret.push_back(string("PID Running: YES"));
         else ret.push_back(string("PID Running: NO"));
         ret.push_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
-
-        return ret;
+				*/
+				ret.push_back(string("EncoderL: ") + std::to_string( encoderL.get_value()));
+				ret.push_back(string("EncoderR: ") + std::to_string( encoderR.get_value()));
+				ret.push_back(string("EncoderM: ") + std::to_string( encoderM.get_value()));
+				ret.push_back(string("Pos X: ") + std::to_string( pos.X));
+				ret.push_back(string("Pos Y: ") + std::to_string( pos.Y));
+				ret.push_back(string("Heading: ") + std::to_string( pos.heading));
+				//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
+				ret.push_back(string("FlywheelVel: ") + std::to_string( flywheelVel));
+				return ret;
     }
 };
 //robot functions

@@ -51,7 +51,7 @@ inline float boundAngle(float radians) {//keeps radians within -PI to +PI
 inline float encoderDistInch(int rawSensor){
 	const float wheelDiam = 3.232;
 	const int countsPerRev = 360;
-	const int gearRatio = 5;//5 to 1
+	const int gearRatio = 1;//1 to 1
 	return (rawSensor * PI * wheelDiam) / (countsPerRev * gearRatio);
 }
 inline bool isWithinBounds(const float current, const float goal, const float thresh){
