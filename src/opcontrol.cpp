@@ -9,20 +9,20 @@ Controller master (E_CONTROLLER_MASTER);
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     while(true){
+        float goalVel = 0;
         if(master.btnL1){
-            r->enableFlywheelPID(OFF);
-            r->flywheelControl(127);
-            r->flyWheelVelPID.setGoal(0);
+            goalVel = 150;//150rpm for high/far flags
         }
         else if(master.btnL2){
-            r->enableFlywheelPID(OFF);
-            r->flywheelControl(-127);
-            r->flyWheelVelPID.setGoal(0);
+            goalVel = 115;//150rpm for high/far flags
+        }
+        else if(master.btnB){
+            goalVel = 0;//150rpm for high/far flags
         }
         else{
-            r->enableFlywheelPID(ON);
-            r->flywheelPID();
+            goalVel = 60;//60rpm for low power use
         }
+        r->fwVelTo(goalVel);
         delay(20);
     }
 }
@@ -47,9 +47,17 @@ void buttonTask(void* param){//task test for flywheel PID
 }
 void updateSensor(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
-    const float delayAmnt = 10;
+    const float delayAmnt = 20;//ms delay for velocity calculations
     while(true){
         r->flywheelVel = r->getFlywheelVel(delayAmnt);
+        delay(delayAmnt);
+    }
+}
+void updatePIDs(void* param){//task test for flywheel PID
+    Robot* r = (Robot*) param;
+    const float delayAmnt = 10;
+    while(false){//nothing yet
+
         delay(delayAmnt);
     }
 }
@@ -68,6 +76,7 @@ void opcontrol() {
     Task odometryCalculations(calculatePos, &rob);
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
+    Task pidUpdates(updatePIDs, &rob);
     Task taskButton(buttonTask, &rob);
   rob.distPID.setGoal(506.5);
   while (true) {
@@ -80,22 +89,6 @@ void opcontrol() {
       else{
           rob.indexerControl(0);
       }
-      /*if(master.btnUP){
-        rob.indexerPIDMove(300);
-        delay(10);
-      }
-      else rob.indexerControl(0);/*
-      else{
-        if(master.btnR1){
-            rob.indexerControl(127);
-        }
-        else if(master.btnR2){
-            rob.indexerControl(-127);
-        }
-        else{
-            rob.indexerControl(0);
-        }
-      }*/
 
       rob.driveLR(master.leftY, master.rightY);
       //rob.LFrontBase.move(clamp(127,-127, PIDPower));

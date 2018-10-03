@@ -1,6 +1,7 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 #include "api.h"
+#include "util.h"
 #include <string>
 #include <vector>
 
@@ -88,29 +89,30 @@ public:
 	}
 	float pidComputeAngle(float currentAngle) {//assuming everything is in ANGLES
         if(isRunning){
-    		error = normAngle(currentAngle - goal);//calculate error
-    		int dir = 1;
-    		float power = 0;
-    		if (isReversed) dir = -1;
-    		const float untilIntegral = thresh * 7;//considered "low threshold"
-    		// calculate the integral
-    		if (kI != 0.0) {//calculates integral (only at very end)
-    			if (fabs(error) < untilIntegral) Integral += error;//used for averaging the integral amount, later in motor power divided by 25
-    			else Integral = 0.0;
-    			power += kI * limUpTo(50, Integral);
-    		}
-    		else Integral = 0.0;
-    		// calculate the derivative
-    		if (kD != 0.0) {
-    			Derivative = error - LastError;//change in errors
-    			LastError = error;
-    		}
-    		else Derivative = 0.0;
-    		power += kD * Derivative;
-    		//final proportional output
-    		power += kP * error;
-    		return dir * power;
+	    		error = normAngle(currentAngle - goal);//calculate error
+	    		int dir = 1;
+	    		float power = 0;
+	    		if (isReversed) dir = -1;
+	    		const float untilIntegral = thresh * 7;//considered "low threshold"
+	    		// calculate the integral
+	    		if (kI != 0.0) {//calculates integral (only at very end)
+	    			if (fabs(error) < untilIntegral) Integral += error;//used for averaging the integral amount, later in motor power divided by 25
+	    			else Integral = 0.0;
+	    			power += kI * limUpTo(50, Integral);
+	    		}
+	    		else Integral = 0.0;
+	    		// calculate the derivative
+	    		if (kD != 0.0) {
+	    			Derivative = error - LastError;//change in errors
+	    			LastError = error;
+	    		}
+	    		else Derivative = 0.0;
+	    		power += kD * Derivative;
+	    		//final proportional output
+	    		power += kP * error;
+	    		return dir * power;
         }
+				return 0;
 	}
     void setGoal(float val){
         goal = val;
@@ -140,11 +142,11 @@ public:
 			encoderR.reset();
 			encoderM.reset();
 			flywheelEnc.reset();
-
+			
 		}
-	Position pos, t_pos;//tpos being the position of the trackers, not robot
-	Odometry odom;
-	PIDcontroller anglePID, distPID, flyWheelVelPID, indexerPID;
+	class Position pos, t_pos;//tpos being the position of the trackers, not robot
+	class Odometry odom;
+	class PIDcontroller anglePID, distPID, flyWheelVelPID, indexerPID;
 	float wheelWidth;//distance b/w L & R tracker wheels (inches)
 	float lastFlywheelVel = 0;
 	float flywheelVel = 0;
@@ -177,35 +179,27 @@ public:
     	float dirSkew = limUpTo(127 * sharpness, scalar*normAngle(pos.heading - angle));
         driveLR(speed + dirSkew, speed - dirSkew);
     }
+
     void flywheelControl(int power){
         sprocket1.move(clamp(127, -127, power));
         sprocket2.move(clamp(127, -127, power));
     }
-		void flywheelVelControl(int vel){
-				sprocket1.move_velocity(clamp(200, -200, vel));
-				sprocket2.move_velocity(clamp(200, -200, vel));
-		}
-    void flywheelPID(){//not rly pid but good enough
-      	flywheelVelControl(flyWheelVelPID.getGoal());
-    }
-		void indexerPIDMove(int goal){
-			indexerPID.setGoal(goal);
-			indexerControl(indexerPID.pidCompute(indexer.get_position()));
+		void fwVelTo(int vel){
+			//positive velocity will power the lift, we dont like...
+				sprocket1.move_velocity(clamp(200, -200, -vel));
+				sprocket2.move_velocity(clamp(200, -200, -vel));
 		}
     float getFlywheelVel(float delayAmnt){
 			float velocity = ( flywheelEnc.get_value() - lastFlywheelVel) / (delayAmnt / 1000.0);
 			lastFlywheelVel = flywheelEnc.get_value();
 			return velocity / 2.0; //(converting ticks/sec to rot/min)
     }
-    void enableFlywheelPID(bool state){
-        flyWheelVelPID.setRunningState(state);
-    }
     void indexerControl(int power){
         indexer.move(clamp(127, -127, power));
     }
 		void ploomp(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
 			int startingPos = indexer.get_position();
-			while(abs(indexer.get_position() - startingPos) < amntTicks){
+			while(fabs(indexer.get_position() - startingPos) < amntTicks){
 				indexerControl(127);
 			}
 			indexerControl(-127);
@@ -214,7 +208,7 @@ public:
 		}
     std::vector<string> debugString(){
         std::vector<string> ret;
-				ret.push_back(string("BATTERY:") + std::to_string( pros::battery::get_capacity()));
+				ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));
 				/*ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
 				ret.push_back(string("Flywheel1 Temp:") + std::to_string(sprocket1.get_temperature()));
         ret.push_back(string("Flywheel2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
@@ -230,7 +224,7 @@ public:
 				ret.push_back(string("Pos Y: ") + std::to_string( pos.Y));
 				ret.push_back(string("Heading: ") + std::to_string( pos.heading));
 				//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
-				ret.push_back(string("FlywheelVel: ") + std::to_string( flywheelVel));
+				ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( round(flywheelVel)) + string(" Motors: ") + std::to_string( round(avg(sprocket1.get_actual_velocity(), sprocket2.get_actual_velocity()) )));
 				return ret;
     }
 };

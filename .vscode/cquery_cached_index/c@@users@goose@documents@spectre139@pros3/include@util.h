@@ -1,6 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "math.h"
+
 #define CW true
 #define CCW false
 #define ON true
@@ -55,10 +57,10 @@ inline float encoderDistInch(int rawSensor){
 	return (rawSensor * PI * wheelDiam) / (countsPerRev * gearRatio);
 }
 inline bool isWithinBounds(const float current, const float goal, const float thresh){
-	return ( abs(current - goal) < thresh );
+	return ( fabs(current - goal) < thresh );
 }
 inline bool isWithinAngleBounds(const float current, const float goal, const float thresh){
-	return ( abs(normAngle(current - goal)) < thresh );
+	return ( fabs(normAngle(current - goal)) < thresh );
 }
 
 //easy button shortcuts
