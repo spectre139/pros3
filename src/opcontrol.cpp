@@ -34,6 +34,8 @@ void updateSensor(void* param){//task test for flywheel PID
     const float delayAmnt = 20;//ms delay for velocity calculations
     while(true){
         r->flywheel.computeVel();
+        r->base.computeVel();
+        r->base.computeRotVel();
         delay(delayAmnt);
     }
 }

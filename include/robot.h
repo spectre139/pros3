@@ -71,6 +71,11 @@ public://higher level functions
 	void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
 		indexer.moveAmnt(amntTicks, 10);
 	}
+	
+
+
+
+
 	std::vector<string> debugString(){
 		std::vector<string> ret;
 		ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));

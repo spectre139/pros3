@@ -7,13 +7,16 @@
 
 #define ON true
 #define OFF false
-
+#define DRIVE 0
+#define ANGLE 1
 class Position {
 public:
     Position() : X(0), Y(0), heading(0) {}
     Position(float x, float y, float head) : X(x), Y(y), heading(head) {}
-
     float X, Y, heading;
+    float distanceToPoint(Position p1){
+        return sqrt(sqr(p1.X - X) + sqr(p1.Y - Y) );
+    }
 };
 class Odometry {
 public:
@@ -27,7 +30,7 @@ public:
     }//init constructor defaulted
     class Position pos, t_pos;
     pros::ADIEncoder encoderL, encoderR, encoderM;
-    float centralAvg = 0, wheelWidth = 8.35;//distance betweenn L&Rtrackers on base (inch)
+    float wheelWidth = 8.35;//distance betweenn L&Rtrackers on base (inch)
     float lastL = 0, lastR = 0, lastM = 0;
 };
 class vec3 {
@@ -50,7 +53,7 @@ public:
     float Integral, Derivative, LastError;
     float thresh, delayThresh, goal;
     //functions
-    float pidCompute(float current) {
+    float compute(float current) {
         if(isRunning){
             error = current - goal;//calculate error
             int dir = 1;
@@ -77,9 +80,36 @@ public:
         }
         return 0;
     }
-    float pidComputeAngle(float currentAngle) {//assuming everything is in ANGLES
+    float computeAngle(float currentAngle) {//assuming everything is in ANGLES
         if(isRunning){
             error = normAngle(currentAngle - goal);//calculate error
+            int dir = 1;
+            float power = 0;
+            if (isReversed) dir = -1;
+            const float untilIntegral = thresh * 7;//considered "low threshold"
+            // calculate the integral
+            if (kI != 0.0) {//calculates integral (only at very end)
+                if (fabs(error) < untilIntegral) Integral += error;//used for averaging the integral amount, later in motor power divided by 25
+                else Integral = 0.0;
+                power += kI * limUpTo(50, Integral);
+            }
+            else Integral = 0.0;
+            // calculate the derivative
+            if (kD != 0.0) {
+                Derivative = error - LastError;//change in errors
+                LastError = error;
+            }
+            else Derivative = 0.0;
+            power += kD * Derivative;
+            //final proportional output
+            power += kP * error;
+            return dir * power;
+        }
+        return 0;
+    }
+    float computeERR(float err) {
+        if(isRunning){
+            error = err;//calculate error
             int dir = 1;
             float power = 0;
             if (isReversed) dir = -1;
@@ -164,7 +194,7 @@ public://functions
         moveTo(starting + amnt, thresh, power);//moves to the position with AMNT as a constant quantity
     }
     void PID(){//does a PID move HAVE TO SET PID GOAL BEFOREHAND
-        if(pid.isRunning) move(pid.pidCompute(getSensorVal()));
+        if(pid.isRunning) move(pid.compute(getSensorVal()));
         return;
     }
     void setPIDState(bool state){//ON = true, OFF = false
@@ -195,7 +225,9 @@ class chassis{
     private:
         std::vector<pros::Motor> mots;//first 2 mots are RIGHT, second two are LEFT
         std::vector<PIDcontroller> pid;
-        public://functions
+        float lastDriveVel = 0, lastRotVel = 0;
+    public://functions
+    float driveVel = 0, rotVel = 0;
         class Odometry odom;
         void driveLR(int powerR, int powerL){//low level
             powerL = clamp(127, -127, powerL);
@@ -205,11 +237,25 @@ class chassis{
             mots[2].move(powerL);
             mots[3].move(powerL);
         }
-        void fwds(int power){//BASE
+        void fwdsDrive(int power){//BASE
             driveLR(power, power);
         }
         void pointTurn(int speed){//turn
             driveLR(speed, -speed);
+        }
+        float computeVel(){
+            float currentSensor = avg(encoderDistInch(odom.encoderL.get_value()), encoderDistInch(odom.encoderR.get_value()));
+            const float delayAmnt = 20;
+            driveVel = ( currentSensor - lastDriveVel) / (delayAmnt / 1000.0);///1000ms in 1 sec
+            lastDriveVel = currentSensor;
+            return driveVel;//converting inch/sec to ???
+        }
+        float computeRotVel(){
+            float currentSensor = odom.pos.heading;
+            const float delayAmnt = 20;
+            rotVel = ( currentSensor - lastRotVel) / (delayAmnt / 1000.0);///1000ms in 1 sec
+            lastRotVel = currentSensor;
+            return rotVel;//converting degrees/sec to ???
         }
         void smoothDrive(int speed, const float angle, float sharpness = 1) {//drive base forwards
             const float scalar = 5;//scalar for rotation
@@ -220,6 +266,69 @@ class chassis{
             float dirSkew = limUpTo(127 * sharpness, scalar*normAngle(odom.pos.heading - angle));
             driveLR(speed + dirSkew, speed - dirSkew);
         }
+        //higher levels
+        void turnTo(const float degrees){//assumed CW is true
+        	pid[ANGLE].goal = degrees;
+        	//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+        	while(abs(odom.pos.heading - pid[ANGLE].goal)>pid[ANGLE].thresh && abs(rotVel) < 5){//waits for low velocity and close enoughness
+        		pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
+        		pros::delay(10);
+        	}
+        	//final check and correction
+        	const int minSpeed = 50;//slow speed for robot's slight correction
+        	while(abs(normAngle(odom.pos.heading - pid[ANGLE].goal)) > pid[ANGLE].thresh){
+        		pointTurn(sign(normAngle(odom.pos.heading - pid[ANGLE].goal)) * minSpeed);
+        	}
+        	pointTurn(0);
+        	return;
+        }
+        void fwds(const int amnt){//inches...ew
+        	const int initEncRight = odom.encoderR.get_value();
+        	const int initEncLeft = odom.encoderL.get_value();
+        	pid[DRIVE].goal = amnt;
+        	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+        	volatile float currentDist = 0.0;
+        	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh && abs(driveVel) < 5){
+        		currentDist = avg(encoderDistInch(odom.encoderL.get_value() - initEncLeft), encoderDistInch(odom.encoderR.get_value()  - initEncRight));
+        		fwdsDrive(pid[DRIVE].compute(currentDist));
+        		pros::delay(10);
+        	}
+        	//final check and correction
+        	const int minSpeed = 40;//slow speed for robot's slight correction
+        	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+        		currentDist = avg(encoderDistInch(odom.encoderL.get_value() - initEncLeft), encoderDistInch(odom.encoderR.get_value()  - initEncRight));
+        		fwdsDrive(-sign(currentDist - pid[DRIVE].goal) * minSpeed);
+        	}
+        	fwdsDrive(0);
+        	return;
+        }
+        void driveToPoint(float x, float y){
+        	//first compute angle to goal
+        	//also divide by 0 is fine bc atan2 has error handling
+        	float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
+        	//then compute distance to goal
+        	float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
+        	turnTo(phi);//simple point turn`
+        	fwds(dist);//simple drive forwards
+        	return;
+        }
+        void smoothDriveToPoint(float x, float y, float sharpness = 1){
+        	class Position goal;
+        	goal.X = x;
+        	goal.Y = y;
+        	float error = goal.distanceToPoint(odom.pos);
+        	pid[DRIVE].goal = 0;//goal is to have no distance between goal and current
+        	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(error), -0.916209) + 2.05938);//fancy
 
+        	while(error > 3){//kinda bad... can be retuned n' stuff
+        		error = goal.distanceToPoint(odom.pos);
+        		//first compute angle to goal
+                float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
+        		//then drive at that angle
+        		smoothDrive(-pid[DRIVE].computeERR(error), phi, sharpness);
+        	}
+        	smoothDrive(0, odom.pos.heading, 1);
+        	return;
+        }
     };
     #endif
