@@ -1,10 +1,13 @@
 #include "main.h"
+#include "robot.h"
+#include "api.h"
 
 using namespace pros;
 using std::string;
 
 Controller master (E_CONTROLLER_MASTER);
 //have to add these next lines for EVERY scope per instance of sensor use... ugh ok.
+
 
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
@@ -14,83 +17,44 @@ void flywheelControl(void* param){//task test for flywheel PID
             goalVel = 150;//150rpm for high/far flags
         }
         else if(master.btnL2){
-            goalVel = 115;//150rpm for high/far flags
+            goalVel = 115;//115rpm for medium/close flags
         }
-        else if(master.btnB){
-            goalVel = 0;//150rpm for high/far flags
-        }
-        else{
+        else if(master.btnA){
             goalVel = 60;//60rpm for low power use
         }
-        r->fwVelTo(goalVel);
+        else if(master.btnB){
+            goalVel = 0;//0rpm for off flywheel
+        }
+        r->flywheel.moveVel(goalVel);
         delay(20);
-    }
-}
-void buttonTask(void* param){//task test for flywheel PID
-    Robot* r = (Robot*) param;
-    while(false){
-        if(master.btnUP){
-            r->flyWheelVelPID.setGoal(r->flyWheelVelPID.getGoal() + 5);//+=5
-            delay(100);
-        }
-        if(master.btnDOWN) {
-            r->flyWheelVelPID.setGoal(r->flyWheelVelPID.getGoal() - 5);//+=5
-            delay(100);
-        }
-        if(master.btnRIGHT) {
-            r->flyWheelVelPID.setGoal(0);//==0
-            delay(100);
-        }
-        r->flyWheelVelPID.setGoal(clamp(200, -200, r->flyWheelVelPID.getGoal()));//clamps goal
-        delay(50);
     }
 }
 void updateSensor(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     const float delayAmnt = 20;//ms delay for velocity calculations
     while(true){
-        r->flywheelVel = r->getFlywheelVel(delayAmnt);
+        r->flywheel.computeVel();
         delay(delayAmnt);
     }
 }
 void updatePIDs(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     const float delayAmnt = 10;
-    while(false){//nothing yet
+    while(true){//nothing yet
+        if(r->flywheel.pid.isRunning) r->flywheel.PID();
+        if(r->indexer.pid.isRunning) r->indexer.PID();
 
         delay(delayAmnt);
     }
 }
 void opcontrol() {
-    Robot rob = Robot(
-    	Position(0, 0, 0),//init position
-    	Position(0, -10, 0),//distance to trackers
-    	Odometry(),//blank odometry
-    	PIDcontroller(1.1, 0.0, 0.0, 3.0,  10, false, false),//angle PID
-      PIDcontroller(1.5, 0.0, 0.0, 0.75, 10, true, false),//drive PID
-      PIDcontroller(1.5, 0.0, 0.0, 1.50, 10, false, true),//flywheel PID
-      PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true),//indexer PID
-    	8.35//wheel width (in)
-    );
-    //Position realPos(0, 0, 0);
-    Task odometryCalculations(calculatePos, &rob);
+    Robot rob = Robot();
+    Task odometryCalculations(calculatePos, &rob.base.odom);
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
-    Task taskButton(buttonTask, &rob);
-  rob.distPID.setGoal(506.5);
   while (true) {
-      if(master.btnR1){
-          rob.indexerControl(127);
-      }
-      else if(master.btnR2){
-          rob.indexerControl(-127);
-      }
-      else{
-          rob.indexerControl(0);
-      }
-
-      rob.driveLR(master.leftY, master.rightY);
+      rob.base.driveLR(master.leftY, master.rightY);
       //rob.LFrontBase.move(clamp(127,-127, PIDPower));
            //debugs
      int i = 0;
