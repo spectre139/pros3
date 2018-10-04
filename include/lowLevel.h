@@ -189,6 +189,9 @@ public://functions
         }
         move(0);
     }
+    void simpleControl(int buttonUp, int buttonDown, int power = 127){
+        move(buttonUp*power + buttonDown*power);//simple up down control with 2 buttons (perf for indexer)
+    }
     void moveAmnt(float amnt, float thresh, float power = 127){//simple encoder move
         float starting = getSensorVal();
         moveTo(starting + amnt, thresh, power);//moves to the position with AMNT as a constant quantity
@@ -200,7 +203,7 @@ public://functions
     void setPIDState(bool state){//ON = true, OFF = false
         pid.isRunning = state;
     }
-    float computeVel(){
+    float computeVel(){//in rots/min
         float currentSensor = getSensorVal();
         const float delayAmnt = 20;
         velocity = ( currentSensor - lastVel) / (delayAmnt / 1000.0);///1000ms in 1 sec
@@ -282,7 +285,11 @@ class chassis{
         	pointTurn(0);
         	return;
         }
-        void fwds(const int amnt){//inches...ew
+        void turn(const float degrees){
+            turnTo(odom.pos.heading + degrees);//basically turns to the current + increment
+            return;
+        }
+        void fwds(const int amnt){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
         	const int initEncRight = odom.encoderR.get_value();
         	const int initEncLeft = odom.encoderL.get_value();
         	pid[DRIVE].goal = amnt;
@@ -312,10 +319,7 @@ class chassis{
         	fwds(dist);//simple drive forwards
         	return;
         }
-        void smoothDriveToPoint(float x, float y, float sharpness = 1){
-        	class Position goal;
-        	goal.X = x;
-        	goal.Y = y;
+        void smoothDriveToPoint(class Position goal, float sharpness = 1){
         	float error = goal.distanceToPoint(odom.pos);
         	pid[DRIVE].goal = 0;//goal is to have no distance between goal and current
         	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(error), -0.916209) + 2.05938);//fancy

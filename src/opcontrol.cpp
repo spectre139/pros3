@@ -55,32 +55,23 @@ void opcontrol() {
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
-  while (true) {
-      rob.base.driveLR(master.leftY, master.rightY);
-      //rob.LFrontBase.move(clamp(127,-127, PIDPower));
-           //debugs
-     int i = 0;
-       for(const string& s : rob.debugString()){
-           lcd::print(i++, s.c_str());
-       }
+    while (true) {
+        rob.base.driveLR(master.leftY, master.rightY);
+        //rob.LFrontBase.move(clamp(127,-127, PIDPower));
+        //debugs
+        int i = 0;
+        for(const string& s : rob.debugString()){
+            lcd::print(i++, s.c_str());
+        }
 
-    /* float error = rob.LFrontBase.get_position() - rob.distPID.getGoal();
-     float PIDPower = rob.distPID.pidCompute(rob.LFrontBase.get_position());
-     if(master.btnA){
-         rob.distPID.setGoal( rand() % 2000 - 1000 );//new goal
-     }
-      string getMotorPos = string("Position: ") + std::to_string(rob.LFrontBase.get_position());
-	  lcd::print(0, getMotorPos.c_str());
-	  string getMotorVel = string("Velocity: ") + std::to_string(rob.LFrontBase.get_actual_velocity());
-	  lcd::print(1, getMotorVel.c_str());
-      string errorPID = string("Error: ") + std::to_string(error);
-	  lcd::print(2, errorPID.c_str());
-      string goalPID = string("Goal: ") + std::to_string(rob.distPID.getGoal());
-	  lcd::print(3, goalPID.c_str());
-      string PIDPowerS = string("PIDPower: ") + std::to_string(PIDPower);
-	  lcd::print(4, PIDPowerS.c_str());
-      string percentError = string("error Percent: ") + std::to_string((rob.LFrontBase.get_position() - rob.distPID.getGoal()) / rob.distPID.getGoal());
-	  lcd::print(5, percentError.c_str());*/
-      delay(2);
-  }
+        rob.indexer.simpleControl(master.btnR1, master.btnR2);
+        if(master.btnUP) rob.testDriveFwds(15);
+        if(master.btnDOWN) rob.testRotation(90);
+        if(master.btnRIGHT) rob.testCurve(Position(20, 15, 0), 0.5);
+        if(master.btnLEFT) rob.testMacro(115, 150);
+        /*once all tests are done to satisfaction:
+        if(master.btnUP) rob.part1();
+        */
+        delay(2);
+    }
 }

@@ -26,8 +26,8 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define motorRFront_Port 3
 #define motorRRear_Port  4
 
-#define sprocket1_Port   5
-#define sprocket2_Port   6
+#define flywheel1_port   5
+#define flywheel2_port   6
 
 #define indexer_Port     7
 
@@ -42,7 +42,7 @@ public:
 	Robot() :
     //mechanisms
     flywheel(
-		{Motor(sprocket1_Port), Motor(sprocket2_Port)}, //motors
+		{Motor(flywheel1_port), Motor(flywheel2_port)}, //motors
 		{ADIEncoder(encoderFlywheelTop, encoderFlywheelBott, false)}, //encoder
 		PIDcontroller(1.5, 0.0, 0.0, 1.50, 10, false, true)//PID
 	),
@@ -71,14 +71,36 @@ public://higher level functions
 	void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
 		indexer.moveAmnt(amntTicks, 10);
 	}
-	
+	//tests
+	void testDriveFwds(float numInches){
+		base.fwds(numInches);
+	}void testRotation(float degrees){
+		base.turn(degrees);
+	}void testCurve(class Position g, float sharpness){
+		base.smoothDriveToPoint(g, sharpness);
+	}void testMacro(float firstVel, float secondVel){
+		const float fwGR = 1.0/21.0;
+		flywheel.moveVel(firstVel);
+		while(abs(flywheel.velocity * fwGR - firstVel) > 5){//while not near target velocity
+			delay(10);
+		}
+		delay(1000);//wait 1 second while at good velocity
+		flywheel.moveVel(secondVel);
+		while(abs(flywheel.velocity * fwGR - secondVel) > 5){//while not near target velocity
+			delay(10);
+		}
+		delay(1000);//wait 1 second while at good velocity
+		flywheel.moveVel(0);
+		return;
+	}
+	//actual skills runs
 
 
 
 
 	std::vector<string> debugString(){
 		std::vector<string> ret;
-		ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));
+		//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));
 		/*ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
 		ret.push_back(string("Flywheel1 Temp:") + std::to_string(sprocket1.get_temperature()));
 		ret.push_back(string("Flywheel2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
@@ -90,8 +112,7 @@ public://higher level functions
 		ret.push_back(string("EncoderL: ") + std::to_string( base.odom.encoderL.get_value()));
 		ret.push_back(string("EncoderR: ") + std::to_string( base.odom.encoderR.get_value()));
 		ret.push_back(string("EncoderM: ") + std::to_string( base.odom.encoderM.get_value()));
-		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X));
-		ret.push_back(string("Pos Y: ") + std::to_string( base.odom.pos.Y));
+		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string("  Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
 		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( round(flywheel.velocity)) + string(" Motors: ") + std::to_string( round(flywheel.getMotorVel()) ));
