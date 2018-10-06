@@ -42,6 +42,8 @@
 #include "robot.h"
 #include "odom.h"
 #include "lowLevel.h"
+pros::ADIEncoder encoderL (1, 2, true), encoderR (3, 4, false), encoderM (5, 6, false);
+
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor,

@@ -9,6 +9,10 @@
 #define OFF false
 #define DRIVE 0
 #define ANGLE 1
+
+extern pros::ADIEncoder encoderL, encoderR, encoderM;
+
+
 class Position {
 public:
     Position() : X(0), Y(0), heading(0) {}
@@ -20,17 +24,12 @@ public:
 };
 class Odometry {
 public:
-    Odometry(Position primary, Position trackers, pros::ADIEncoder L, pros::ADIEncoder R, pros::ADIEncoder M) :
-    encoderL(L), encoderR(R), encoderM(M),
+    Odometry(Position primary, Position trackers) ://, pros::ADIEncoder L, pros::ADIEncoder R, pros::ADIEncoder M) :
     pos(primary), t_pos(trackers)
     {
-      encoderL.reset();
-      encoderR.reset();
-      encoderM.reset();
     }//init constructor defaulted
-    class Position pos, t_pos;
-    pros::ADIEncoder encoderL, encoderR, encoderM;
-    float wheelWidth = 8.35;//distance betweenn L&Rtrackers on base (inch)
+    Position pos, t_pos;
+    float wheelWidth = 8.55;//distance betweenn L&Rtrackers on base (inch)
     float lastL = 0, lastR = 0, lastM = 0;
 };
 class vec3 {
@@ -230,7 +229,7 @@ class chassis{
         std::vector<PIDcontroller> pid;
         float lastDriveVel = 0, lastRotVel = 0;
     public://functions
-    float driveVel = 0, rotVel = 0;
+        float driveVel = 0, rotVel = 0;
         class Odometry odom;
         void driveLR(int powerR, int powerL){//low level
             powerL = clamp(127, -127, powerL);
@@ -247,7 +246,7 @@ class chassis{
             driveLR(speed, -speed);
         }
         float computeVel(){
-            float currentSensor = avg(encoderDistInch(odom.encoderL.get_value()), encoderDistInch(odom.encoderR.get_value()));
+            float currentSensor = avg(encoderDistInch(encoderL.get_value()), encoderDistInch(encoderR.get_value()));
             const float delayAmnt = 20;
             driveVel = ( currentSensor - lastDriveVel) / (delayAmnt / 1000.0);///1000ms in 1 sec
             lastDriveVel = currentSensor;
@@ -286,24 +285,24 @@ class chassis{
         	return;
         }
         void turn(const float degrees){
-            turnTo(odom.pos.heading + degrees);//basically turns to the current + increment
+            turnTo(normAngle(odom.pos.heading + degrees));//basically turns to the current + increment
             return;
         }
         void fwds(const int amnt){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
-        	const int initEncRight = odom.encoderR.get_value();
-        	const int initEncLeft = odom.encoderL.get_value();
+        	const int initEncRight = encoderR.get_value();
+        	const int initEncLeft = encoderL.get_value();
         	pid[DRIVE].goal = amnt;
         	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
         	volatile float currentDist = 0.0;
         	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh && abs(driveVel) < 5){
-        		currentDist = avg(encoderDistInch(odom.encoderL.get_value() - initEncLeft), encoderDistInch(odom.encoderR.get_value()  - initEncRight));
+        		currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
         		fwdsDrive(pid[DRIVE].compute(currentDist));
         		pros::delay(10);
         	}
         	//final check and correction
         	const int minSpeed = 40;//slow speed for robot's slight correction
         	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
-        		currentDist = avg(encoderDistInch(odom.encoderL.get_value() - initEncLeft), encoderDistInch(odom.encoderR.get_value()  - initEncRight));
+        		currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
         		fwdsDrive(-sign(currentDist - pid[DRIVE].goal) * minSpeed);
         	}
         	fwdsDrive(0);

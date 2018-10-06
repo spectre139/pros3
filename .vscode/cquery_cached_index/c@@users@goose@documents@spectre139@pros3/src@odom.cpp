@@ -1,14 +1,17 @@
-#include "main.h"
+#include "api.h"
+#include "util.h"
+#include "robot.h"
 
 using namespace pros;
-
 void calculatePos(void* param){
-    class Odometry* Odom = (Odometry*) param;
+  const ADIEncoder encL (1, 2, true), encR (3, 4, false), encM (5, 6, false);
+
+  class Odometry* Odom = (Odometry*) param;
 	for(;;){
 
-		float dR = encoderDistInch(Odom->encoderR.get_value())  - Odom->lastR;//change in right encoder
-		float dL = encoderDistInch(Odom->encoderL.get_value())  - Odom->lastL;//change in left
-		float dM = encoderDistInch(Odom->encoderM.get_value())  - Odom->lastM;//change in middle
+		float dR = encoderDistInch(encR.get_value())  - Odom->lastR;//change in right encoder
+		float dL = encoderDistInch(encL.get_value())  - Odom->lastL;//change in left
+		float dM = encoderDistInch(encM.get_value())  - Odom->lastM;//change in middle
 
 		Odom->lastR += dR;//updates "last" values
 		Odom->lastL += dL;//updates "last" values

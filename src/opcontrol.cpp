@@ -8,14 +8,13 @@ using std::string;
 Controller master (E_CONTROLLER_MASTER);
 //have to add these next lines for EVERY scope per instance of sensor use... ugh ok.
 
-
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     float goalVel = 0;
     while(true){
         if(master.btnL1){
-            goalVel = 150;//150rpm for high/far flags
-        }
+            goalVel = 150;//150rpm for high/far flags}
+          }
         else if(master.btnL2){
             goalVel = 115;//115rpm for medium/close flags
         }
@@ -37,6 +36,7 @@ void updateSensor(void* param){//task test for flywheel PID
         r->base.computeVel();
         r->base.computeRotVel();
         delay(delayAmnt);
+
     }
 }
 void updatePIDs(void* param){//task test for flywheel PID
@@ -50,19 +50,26 @@ void updatePIDs(void* param){//task test for flywheel PID
     }
 }
 Robot rob = Robot();
+
 void opcontrol() {
     Task odometryCalculations(calculatePos, &rob.base.odom);
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
+    ADIEncoder encoderL (1, 2, true), encoderR (3, 4, false), encoderM (5, 6, false);
+    ADIEncoder FWenc (7, 8, false);
+
     while (true) {
-        rob.base.driveLR(master.rightY, master.leftY);
+      rob.base.driveLR(master.rightY, master.leftY);
         //rob.LFrontBase.move(clamp(127,-127, PIDPower));
         //debugs
         int i = 0;
         for(const string& s : rob.debugString()){
             lcd::print(i++, s.c_str());
         }
+        //lcd::print(1, (string("EncoderL6: ") + std::to_string( encoderR.get_value())).c_str() );
+        //lcd::print(2, (string("EncoderR6: ") + std::to_string( encoderL.get_value())).c_str() );
+        //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
         rob.intake.simpleControl(master.btnR1, master.btnR2);
         rob.indexer.simpleControl(master.btnUP, master.btnDOWN);
         /*if(master.btnUP) rob.testDriveFwds(15);

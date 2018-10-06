@@ -3,11 +3,11 @@
 using namespace pros;
 
 #define reversed true
-ADIEncoder encoderL(1, 2, true), encoderR(3, 4, false), encoderM(5, 6, true);
+
 
 void initSensors(){
 
-	/*ADIEncoder encoderL (encoderLTop_Port, encoderLTop_Port, false);
+	/*DIEncoder encoderL (encoderLTop_Port, encoderLTop_Port, false);
 	ADIEncoder encoderR (encoderRTop_Port, encoderRTop_Port, false);
 	ADIEncoder encoderM (encoderMTop_Port, encoderMTop_Port, false);
 	encoderL.reset();
@@ -38,6 +38,7 @@ void initSensors(){
 	 Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
  }
 void initialize() {
+
 	lcd::initialize();
 //	lcd::set_text(1, "Welcome 139A Gods");
 	initSensors();
