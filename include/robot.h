@@ -64,11 +64,11 @@ public:
 		//drive PID, then angle PID
 		{PIDcontroller(1.5, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.1, 0.0, 0.0, 3.0,  10, false, false) },
 		//Odometry
-		Odometry(Position(0, 0, 0), Position(0, -10, 0),//actual position, tracker mech's position
+		Odometry(Position(0, 0, 0), Position(0, -10, 0)//,//actual position, tracker mech's position
 			//Odom Sensors:
-			ADIEncoder(1, 2, true),//left encoder
-			ADIEncoder(3, 4, false),//right encoder
-			ADIEncoder(5, 6, true)//middle encoder
+			//ADIEncoder(1, 2, true),//left encoder
+		//	ADIEncoder(3, 4, false),//right encoder
+		//	ADIEncoder(5, 6, true)//middle encoder
 		)
 	){}
 
@@ -117,9 +117,9 @@ public://higher level functions
 		else ret.push_back(string("PID Running: NO"));
 		ret.push_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
 		*/
-		ret.push_back(string("EncoderL: ") + std::to_string( base.odom.encoderL.get_value()));
-		ret.push_back(string("EncoderR: ") + std::to_string( base.odom.encoderR.get_value()));
-		ret.push_back(string("EncoderM: ") + std::to_string( base.odom.encoderM.get_value()));
+		ret.push_back(string("EncoderL: ") + std::to_string( encoderL.get_value()));
+		ret.push_back(string("EncoderR: ") + std::to_string( encoderR.get_value()));
+		ret.push_back(string("EncoderM: ") + std::to_string( encoderM.get_value()));
 		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));

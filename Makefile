@@ -96,7 +96,7 @@ endef
 $(foreach cext,$(CEXTS),$(eval $(call c_rule,$(cext))))
 
 define cxx_rule
-$(BINDIR)/%.$1.o: $(SRCDIR)/%.$1
+$(BINDIR)/%.$1.o: $(SRCDIR)/%.$1 $(INCDIR)
 	$(VV)mkdir -p $$(dir $$@)
 	@echo -n "Compiling $$< "
 	$$(call test_output,$D$(CXX) -c $(INCLUDE) -iquote$(INCDIR)/$$(dir $$*) $(CXXFLAGS) $(EXTRA_CXXFLAGS) -o $$@ $$<,$(OK_STRING))

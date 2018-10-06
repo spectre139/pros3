@@ -49,8 +49,8 @@ void updatePIDs(void* param){//task test for flywheel PID
         delay(delayAmnt);
     }
 }
+Robot rob = Robot();
 void opcontrol() {
-    Robot rob = Robot();
     Task odometryCalculations(calculatePos, &rob.base.odom);
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);

@@ -6,9 +6,9 @@ void calculatePos(void* param){
     class Odometry* Odom = (Odometry*) param;
 	for(;;){
 
-		float dR = encoderDistInch(Odom->encoderR.get_value())  - Odom->lastR;//change in right encoder
-		float dL = encoderDistInch(Odom->encoderL.get_value())  - Odom->lastL;//change in left
-		float dM = encoderDistInch(Odom->encoderM.get_value())  - Odom->lastM;//change in middle
+		float dR = encoderDistInch(encoderR.get_value())  - Odom->lastR;//change in right encoder
+		float dL = encoderDistInch(encoderL.get_value())  - Odom->lastL;//change in left
+		float dM = encoderDistInch(encoderM.get_value())  - Odom->lastM;//change in middle
 
 		Odom->lastR += dR;//updates "last" values
 		Odom->lastL += dL;//updates "last" values
