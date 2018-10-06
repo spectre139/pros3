@@ -41,6 +41,7 @@
 #include "util.h"
 #include "robot.h"
 #include "odom.h"
+#include "lowLevel.h"
 /**
  * If you find doing pros::Motor() to be tedious and you'd prefer just to do
  * Motor,
@@ -73,15 +74,6 @@ extern adi_encoder_t middEncoder;
 //defining encoder ports:
 
 //defining motor ports:
-#define motorLFront_Port 1
-#define motorLRear_Port  2
-#define motorRFront_Port 3
-#define motorRRear_Port  4
-
-#define sprocket1_Port   5
-#define sprocket2_Port   6
-
-#define indexer_Port     7
 
 #endif
 

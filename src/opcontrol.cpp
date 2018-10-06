@@ -11,8 +11,8 @@ Controller master (E_CONTROLLER_MASTER);
 
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
+    float goalVel = 0;
     while(true){
-        float goalVel = 0;
         if(master.btnL1){
             goalVel = 150;//150rpm for high/far flags
         }
@@ -56,19 +56,19 @@ void opcontrol() {
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
     while (true) {
-        rob.base.driveLR(master.leftY, master.rightY);
+        rob.base.driveLR(master.rightY, master.leftY);
         //rob.LFrontBase.move(clamp(127,-127, PIDPower));
         //debugs
         int i = 0;
         for(const string& s : rob.debugString()){
             lcd::print(i++, s.c_str());
         }
-
-        rob.indexer.simpleControl(master.btnR1, master.btnR2);
-        if(master.btnUP) rob.testDriveFwds(15);
+        rob.intake.simpleControl(master.btnR1, master.btnR2);
+        rob.indexer.simpleControl(master.btnUP, master.btnDOWN);
+        /*if(master.btnUP) rob.testDriveFwds(15);
         if(master.btnDOWN) rob.testRotation(90);
         if(master.btnRIGHT) rob.testCurve(Position(20, 15, 0), 0.5);
-        if(master.btnLEFT) rob.testMacro(115, 150);
+        if(master.btnLEFT) rob.testMacro(115, 150);*/
         /*once all tests are done to satisfaction:
         if(master.btnUP) rob.part1();
         */

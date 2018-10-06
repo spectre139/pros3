@@ -4,6 +4,7 @@
 #include "util.h"
 #include <string>
 #include <vector>
+#include <cerrno>
 #include "lowLevel.h"
 
 using pros::Motor, pros::ADIEncoder, std::string;
@@ -30,6 +31,8 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define flywheel2_port   6
 
 #define indexer_Port     7
+#define intake_Port      8
+
 
 
 using pros::Motor, pros::ADIEncoder, std::string;
@@ -51,6 +54,11 @@ public:
 		{},//no sensors for indexer, thus use indexer motor
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
+		intake(
+		{ Motor(intake_Port) }, //motors
+		{},//no sensors for indexer, thus use indexer motor
+		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
+	),
     base(//motors
 		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
 		//drive PID, then angle PID
@@ -58,13 +66,13 @@ public:
 		//Odometry
 		Odometry(Position(0, 0, 0), Position(0, -10, 0),//actual position, tracker mech's position
 			//Odom Sensors:
-			ADIEncoder(encoderLTop_Port, encoderLBott_Port, true),//left encoder
-			ADIEncoder(encoderRTop_Port, encoderRBott_Port, false),//right encoder
-			ADIEncoder(encoderMTop_Port, encoderMBott_Port, true)//middle encoder
+			ADIEncoder(1, 2, true),//left encoder
+			ADIEncoder(3, 4, false),//right encoder
+			ADIEncoder(5, 6, true)//middle encoder
 		)
 	){}
 
-    class mechanism flywheel, indexer;
+    class mechanism flywheel, indexer, intake;
     class chassis base;
 public://higher level functions
 
@@ -112,10 +120,11 @@ public://higher level functions
 		ret.push_back(string("EncoderL: ") + std::to_string( base.odom.encoderL.get_value()));
 		ret.push_back(string("EncoderR: ") + std::to_string( base.odom.encoderR.get_value()));
 		ret.push_back(string("EncoderM: ") + std::to_string( base.odom.encoderM.get_value()));
-		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string("  Pos Y: ") + std::to_string( base.odom.pos.Y));
+		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
 		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( round(flywheel.velocity)) + string(" Motors: ") + std::to_string( round(flywheel.getMotorVel()) ));
+		ret.push_back(string("Error Val: ") + strerror(errno));
 		return ret;
 	}
 };
