@@ -142,7 +142,7 @@ public:
     {
         if(!encs.empty()){
             for(const pros::ADIEncoder& e : encs){
-                e.reset();//clears all encoders
+                //e.set_value(0);//clears all encoders
             }
         }
     }
@@ -271,11 +271,13 @@ class chassis{
         //higher levels
         void turnTo(const float degrees){//assumed CW is true
         	pid[ANGLE].goal = degrees;
+          pid[ANGLE].isRunning = true;
         	//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
-        	while(abs(odom.pos.heading - pid[ANGLE].goal)>pid[ANGLE].thresh && abs(rotVel) < 5){//waits for low velocity and close enoughness
+        	while(abs(odom.pos.heading - pid[ANGLE].goal) > pid[ANGLE].thresh /*&& abs(rotVel) < 5*/){//waits for low velocity and close enoughness
         		pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
         		pros::delay(10);
         	}
+          pid[ANGLE].isRunning = false;
         	//final check and correction
         	const int minSpeed = 50;//slow speed for robot's slight correction
         	while(abs(normAngle(odom.pos.heading - pid[ANGLE].goal)) > pid[ANGLE].thresh){
@@ -328,7 +330,7 @@ class chassis{
         		//first compute angle to goal
                 float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
         		//then drive at that angle
-        		smoothDrive(-pid[DRIVE].computeERR(error), phi, sharpness);
+        		smoothDrive(pid[DRIVE].computeERR(error), phi, sharpness);
         	}
         	smoothDrive(0, odom.pos.heading, 1);
         	return;

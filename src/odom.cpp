@@ -1,10 +1,10 @@
 #include "api.h"
 #include "util.h"
-#include "robot.h"
+#include "lowLevel.h"
 
 using namespace pros;
 void calculatePos(void* param){
-  const ADIEncoder encL (1, 2, true), encR (3, 4, false), encM (5, 6, false);
+  ADIEncoder encL (1, 2, true), encR (3, 4, false), encM (5, 6, false);
 
   class Odometry* Odom = (Odometry*) param;
 	for(;;){

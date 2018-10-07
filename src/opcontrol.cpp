@@ -1,5 +1,5 @@
 #include "main.h"
-#include "robot.h"
+#include "lowLevel.h"
 #include "api.h"
 
 using namespace pros;
@@ -12,10 +12,10 @@ void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
     float goalVel = 0;
     while(true){
-        if(master.btnL1){
+        if(master.btnUP){
             goalVel = 150;//150rpm for high/far flags}
           }
-        else if(master.btnL2){
+        else if(master.btnDOWN){
             goalVel = 115;//115rpm for medium/close flags
         }
         else if(master.btnA){
@@ -70,12 +70,13 @@ void opcontrol() {
         //lcd::print(1, (string("EncoderL6: ") + std::to_string( encoderR.get_value())).c_str() );
         //lcd::print(2, (string("EncoderR6: ") + std::to_string( encoderL.get_value())).c_str() );
         //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
-        rob.intake.simpleControl(master.btnR1, master.btnR2);
-        rob.indexer.simpleControl(master.btnUP, master.btnDOWN);
-        /*if(master.btnUP) rob.testDriveFwds(15);
-        if(master.btnDOWN) rob.testRotation(90);
-        if(master.btnRIGHT) rob.testCurve(Position(20, 15, 0), 0.5);
-        if(master.btnLEFT) rob.testMacro(115, 150);*/
+        rob.intake.simpleControl(master.btnL1, master.btnL2);
+        rob.indexer.simpleControl(master.btnR1, master.btnR2);
+        /////rob.lift.simpleControl(master.btnLEFT, master.btnRIGHT);
+        //if(master.btnUP) rob.testDriveFwds(15);
+        //if(master.btnDOWN) rob.testRotation(90);
+        if(master.btnX) rob.base.turn(90);//testCurve(Position(20, 15, 0), 0.5);
+        //if(master.btnLEFT) rob.testMacro(115, 150);
         /*once all tests are done to satisfaction:
         if(master.btnUP) rob.part1();
         */

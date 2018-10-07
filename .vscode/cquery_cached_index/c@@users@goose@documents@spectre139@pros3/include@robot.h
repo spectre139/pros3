@@ -22,16 +22,16 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define motorLFront_Port 1
-#define motorLRear_Port  2
-#define motorRFront_Port 3
-#define motorRRear_Port  4
+#define motorLFront_Port 7
+#define motorLRear_Port  8
+#define motorRFront_Port 9
+#define motorRRear_Port  10
 
-#define flywheel1_port   5
-#define flywheel2_port   6
+#define flywheel1_port   1
+#define flywheel2_port   2
 
-#define indexer_Port     7
-#define intake_Port      8
+#define intake_Port      4
+#define indexer_Port     5
 
 using namespace pros;
 
@@ -53,13 +53,18 @@ public:
 	),
 		intake(
 		{ Motor(intake_Port) }, //motors
-		{},//no sensors for indexer, thus use indexer motor
+		{},//no sensors for intake, thus use indexer motor
+		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
+	),
+		lift(
+		{ Motor(flywheel1_port), Motor(flywheel2_port) }, //motors
+		{},//no sensors for lift, thus use indexer motor
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
     base(//motors
 		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
 		//drive PID, then angle PID
-		{ PIDcontroller(1.5, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.1, 0.0, 0.0, 3.0,  10, false, false) },
+		{ PIDcontroller(0.015, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.7, 0.0, 0.0, 1.0,  10, true, false) },
 		//Odometry
 		Odometry(Position(0, 0, 0), Position(0, -10, 0)//,//actual position, tracker mech's position
 			//Odom Sensors:
@@ -69,7 +74,7 @@ public:
 		)
 	){}
 
-    class mechanism flywheel, indexer, intake;
+    class mechanism flywheel, indexer, intake, lift;
     class chassis base;
 public://higher level functions
 
@@ -114,9 +119,9 @@ public://higher level functions
 		else ret.push_back(string("PID Running: NO"));
 		ret.pus h_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
 		*/
-		ret.push_back(string("EncoderL5: ") + std::to_string( encoderL.get_value()));
-		ret.push_back(string("EncoderR5: ") + std::to_string( encoderR.get_value()));
-		ret.push_back(string("EncoderM5: ") + std::to_string( encoderM.get_value()));
+		ret.push_back(string("EncoderL2: ") + std::to_string( encoderL.get_value()));
+		ret.push_back(string("EncoderR2: ") + std::to_string( encoderR.get_value()));
+		ret.push_back(string("EncoderM2: ") + std::to_string( encoderM.get_value()));
 		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
