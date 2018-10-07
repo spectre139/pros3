@@ -10,21 +10,20 @@ Controller master (E_CONTROLLER_MASTER);
 
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
-    float goalVel = 0;
     while(true){
         if(master.btnUP){
-            goalVel = 150;//150rpm for high/far flags}
+            r->FWVelGoal = 150;//150rpm for high/far flags}
           }
         else if(master.btnDOWN){
-            goalVel = 115;//115rpm for medium/close flags
+            r->FWVelGoal = 115;//115rpm for medium/close flags
         }
         else if(master.btnA){
-            goalVel = 60;//60rpm for low power use
+            r->FWVelGoal = 60;//60rpm for low power use
         }
         else if(master.btnB){
-            goalVel = 0;//0rpm for off flywheel
+            r->FWVelGoal = 0;//0rpm for off flywheel
         }
-        r->flywheel.moveVel(goalVel);
+        r->flywheel.moveVel(r->FWVelGoal);
         delay(20);
     }
 }
@@ -72,7 +71,10 @@ void opcontrol() {
         //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
         rob.intake.simpleControl(master.btnL1, master.btnL2);
         rob.indexer.simpleControl(master.btnR1, master.btnR2);
-        /////rob.lift.simpleControl(master.btnLEFT, master.btnRIGHT);
+        if(rob.FWVelGoal == 0) {
+            //only control the lift (same fw motres) when fw is off
+            rob.lift.simpleControl(master.btnLEFT, master.btnRIGHT);
+        }
         //if(master.btnUP) rob.testDriveFwds(15);
         //if(master.btnDOWN) rob.testRotation(90);
         if(master.btnX) rob.base.turn(90);//testCurve(Position(20, 15, 0), 0.5);

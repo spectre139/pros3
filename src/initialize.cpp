@@ -4,60 +4,47 @@
 using namespace pros;
 
 #define reversed true
-//defining motor ports:
-#define motorLFront_Port 7
-#define motorLRear_Port  8
-#define motorRFront_Port 9
-#define motorRRear_Port  10
+#define encoderLTop_Port  1
+#define encoderLBott_Port 2
 
+#define encoderRTop_Port  3
+#define encoderRBott_Port 4
+
+#define encoderMTop_Port  5
+#define encoderMBott_Port 6
+
+#define encoderFlywheelTop  7
+#define encoderFlywheelBott 8
+
+//defining motor ports:
 #define flywheel1_port   1
 #define flywheel2_port   2
 
 #define intake_Port      4
 #define indexer_Port     5
+
+#define motorLFront_Port 7
+#define motorLRear_Port  8
+#define motorRFront_Port 9
+#define motorRRear_Port  10
 void initSensors(){
-
-	/*DIEncoder encoderL (encoderLTop_Port, encoderLTop_Port, false);
-	ADIEncoder encoderR (encoderRTop_Port, encoderRTop_Port, false);
-	ADIEncoder encoderM (encoderMTop_Port, encoderMTop_Port, false);
-	encoderL.reset();
-	encoderR.reset();
-	encoderM.reset();
-  pros::ADIPort sensor1 (1, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor2 (2, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor3 (3, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor4 (4, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor5 (5, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor6 (6, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor7 (7, E_ADI_DIGITAL_IN);
-  pros::ADIPort sensor8 (8, E_ADI_DIGITAL_IN);
-
-  pros::ADIEncoder encoderL (encoderLTop_Port, encoderLBott_Port, false);
-  pros::ADIEncoder encoderR (encoderRTop_Port, encoderRBott_Port, true);
-  pros::ADIEncoder encoderM (encoderMTop_Port, encoderMBott_Port, false);*/
 }
- void initMotors(){//i wonder... do i even need this?
-	 Motor LFrontBase_initializer (motorLFront_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-	 Motor LRearBase_initializer (motorLRear_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-	 Motor RFrontBase_initializer (motorRFront_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-	 Motor RRearBase_initializer (motorRRear_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-	 //flywheel
-	 Motor flywheel1_initializer (flywheel1_port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-	 Motor flywheel2_initializer (flywheel2_port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-	 //indexer
-   Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-   Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
- }
+void initMotors(){//i wonder... do i even need this?
+    Motor LFrontBase_initializer (motorLFront_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor LRearBase_initializer (motorLRear_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor RFrontBase_initializer (motorRFront_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor RRearBase_initializer (motorRRear_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
+    //flywheel
+    Motor flywheel1_initializer (flywheel1_port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor flywheel2_initializer (flywheel2_port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    //indexer
+    Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+}
 void initialize() {
-
-	lcd::initialize();
-//	lcd::set_text(1, "Welcome 139A Gods");
-	initSensors();
-	initMotors();
-	//Task odometryCalculations(calculatePos, &text);
-	//Task my_task(my_task_fn, &text);
-
-
+    lcd::initialize();
+    initSensors();
+    initMotors();
 }
 
 void disabled() {}

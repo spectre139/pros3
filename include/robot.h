@@ -22,16 +22,16 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define motorLFront_Port 7
-#define motorLRear_Port  8
-#define motorRFront_Port 9
-#define motorRRear_Port  10
-
 #define flywheel1_port   1
 #define flywheel2_port   2
 
 #define intake_Port      4
 #define indexer_Port     5
+
+#define motorLFront_Port 7
+#define motorLRear_Port  8
+#define motorRFront_Port 9
+#define motorRRear_Port  10
 
 using namespace pros;
 
@@ -64,7 +64,7 @@ public:
     base(//motors
 		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
 		//drive PID, then angle PID
-		{ PIDcontroller(0.015, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.7, 0.0, 0.0, 1.0,  10, true, false) },
+		{ PIDcontroller(0.5, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.7, 0.0, 0.0, 1.0,  10, true, false) },
 		//Odometry
 		Odometry(Position(0, 0, 0), Position(0, -10, 0)//,//actual position, tracker mech's position
 			//Odom Sensors:
@@ -72,10 +72,15 @@ public:
 		//	ADIEncoder(3, 4, false),//right encoder
 		//	ADIEncoder(5, 6, true)//middle encoder
 		)
-	){}
+	){
+		base.odom.pos.X = 0;
+		base.odom.pos.Y = -10;
+		base.odom.pos.heading = 90;
+	}
 
     class mechanism flywheel, indexer, intake, lift;
     class chassis base;
+	float FWVelGoal = 0;
 public://higher level functions
 
 	void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
@@ -119,31 +124,18 @@ public://higher level functions
 		else ret.push_back(string("PID Running: NO"));
 		ret.pus h_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
 		*/
-		ret.push_back(string("EncoderL2: ") + std::to_string( encoderL.get_value()));
-		ret.push_back(string("EncoderR2: ") + std::to_string( encoderR.get_value()));
-		ret.push_back(string("EncoderM2: ") + std::to_string( encoderM.get_value()));
+		ret.push_back(string("EncL: ") + std::to_string( encoderL.get_value())
+					 +string("; EncR: ") + std::to_string( encoderR.get_value())
+					 +string("; EncM: ") + std::to_string( encoderM.get_value()));
 		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
-		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity) + string(" Motors: ") + std::to_string( round(flywheel.getMotorVel()) ));
-		ret.push_back(string("Error Val: ") + strerror(errno));
+		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity) + string(" Motors: ") + std::to_string( flywheel.getMotorVel() ));
+		ret.push_back(string("base Vel: ") + std::to_string( base.driveVel) + string("; rot Vel: ") + std::to_string( base.rotVel));
+		ret.push_back(string("Angle Err: ") + std::to_string( base.pid[ANGLE].error));
+
+		//ret.push_back(string("Error Val: ") + strerror(errno));
 		return ret;
 	}
 };
-
-/*void fwdsDrive(int speed, const float angle = robot.pos.heading) {//drive base forwards
-const float scalar = 5;//scalar for rotation
-float dirSkew = limUpTo(30, scalar*normAngle(rob.pos.heading - angle));
-speed = clamp(127, -127, speed);
-skewTurnRL(speed - dirSkew, speed + dirSkew);
-}
-void curveDrive(int speed, const float angle = robot.pos.heading) {//drive base forwards
-const float sharpness = 0.05;//GET RID OF THIS, MAKE IT A PID PARAMETER, wont need fwds
-speed = clamp(127, -127, speed);
-if(angle > normAngle(robot.pos.heading))
-skewTurnRL(speed, speed*sharpness);
-else skewTurnRL(speed*sharpness, speed);
-}*/
-
-
 #endif

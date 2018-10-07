@@ -23,7 +23,7 @@ void calculatePos(void* param){
 
 		float radHeading = boundAngle(toRad(avgHeading));
 		// Update current r position.
-		Odom->t_pos.heading += dHeading;
+		Odom->t_pos.heading = normAngle(Odom->t_pos.heading + dHeading);//should this be normalized???
 		Odom->t_pos.X += dCentral * cos(radHeading) + dM * sin(radHeading);
 		Odom->t_pos.Y += dCentral * sin(radHeading) - dM * cos(radHeading);
 		//add little vector after calculating H mech's position
