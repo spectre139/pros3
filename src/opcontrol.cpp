@@ -44,7 +44,10 @@ void updatePIDs(void* param){//task test for flywheel PID
     while(true){//nothing yet
         if(r->flywheel.pid.isRunning) r->flywheel.PID();
         if(r->indexer.pid.isRunning) r->indexer.PID();
-
+        int i = 0;
+        for(const string& s : r->debugString()){
+            lcd::print(i++, s.c_str());
+        }
         delay(delayAmnt);
     }
 }
@@ -55,17 +58,14 @@ void opcontrol() {
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
-    ADIEncoder encoderL (1, 2, true), encoderR (3, 4, false), encoderM (5, 6, false);
+    ADIEncoder encoderL (1, 2, true), encoderR (3, 4, true), encoderM (5, 6, false);
     ADIEncoder FWenc (7, 8, false);
-
+    rob.base.odom.pos.X = 0;
+    rob.base.odom.pos.Y = 0;
     while (true) {
       rob.base.driveLR(master.rightY, master.leftY);
         //rob.LFrontBase.move(clamp(127,-127, PIDPower));
         //debugs
-        int i = 0;
-        for(const string& s : rob.debugString()){
-            lcd::print(i++, s.c_str());
-        }
         //lcd::print(1, (string("EncoderL6: ") + std::to_string( encoderR.get_value())).c_str() );
         //lcd::print(2, (string("EncoderR6: ") + std::to_string( encoderL.get_value())).c_str() );
         //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
@@ -77,7 +77,7 @@ void opcontrol() {
         }
         //if(master.btnUP) rob.testDriveFwds(15);
         //if(master.btnDOWN) rob.testRotation(90);
-        if(master.btnX) rob.base.turn(90);//testCurve(Position(20, 15, 0), 0.5);
+        if(master.btnX) rob.skills();//base.smoothDriveToPoint(10, 20, 0.5);
         //if(master.btnLEFT) rob.testMacro(115, 150);
         /*once all tests are done to satisfaction:
         if(master.btnUP) rob.part1();

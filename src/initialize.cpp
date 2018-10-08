@@ -27,8 +27,7 @@ using namespace pros;
 #define motorLRear_Port  8
 #define motorRFront_Port 9
 #define motorRRear_Port  10
-void initSensors(){
-}
+
 void initMotors(){//i wonder... do i even need this?
     Motor LFrontBase_initializer (motorLFront_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
     Motor LRearBase_initializer (motorLRear_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
@@ -38,12 +37,11 @@ void initMotors(){//i wonder... do i even need this?
     Motor flywheel1_initializer (flywheel1_port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
     Motor flywheel2_initializer (flywheel2_port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
     //indexer
-    Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
 }
 void initialize() {
     lcd::initialize();
-    initSensors();
     initMotors();
 }
 

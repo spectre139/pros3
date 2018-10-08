@@ -10,21 +10,20 @@ Controller master (E_CONTROLLER_MASTER);
 
 void flywheelControl(void* param){//task test for flywheel PID
     Robot* r = (Robot*) param;
-    float goalVel = 0;
     while(true){
         if(master.btnUP){
-            goalVel = 150;//150rpm for high/far flags}
+            r->FWVelGoal = 150;//150rpm for high/far flags}
           }
         else if(master.btnDOWN){
-            goalVel = 115;//115rpm for medium/close flags
+            r->FWVelGoal = 115;//115rpm for medium/close flags
         }
         else if(master.btnA){
-            goalVel = 60;//60rpm for low power use
+            r->FWVelGoal = 60;//60rpm for low power use
         }
         else if(master.btnB){
-            goalVel = 0;//0rpm for off flywheel
+            r->FWVelGoal = 0;//0rpm for off flywheel
         }
-        r->flywheel.moveVel(goalVel);
+        r->flywheel.moveVel(r->FWVelGoal);
         delay(20);
     }
 }
@@ -45,7 +44,10 @@ void updatePIDs(void* param){//task test for flywheel PID
     while(true){//nothing yet
         if(r->flywheel.pid.isRunning) r->flywheel.PID();
         if(r->indexer.pid.isRunning) r->indexer.PID();
-
+        int i = 0;
+        for(const string& s : r->debugString()){
+            lcd::print(i++, s.c_str());
+        }
         delay(delayAmnt);
     }
 }
@@ -56,26 +58,26 @@ void opcontrol() {
     Task controlFlywheel(flywheelControl, &rob);
     Task sensorUpdates(updateSensor, &rob);
     Task pidUpdates(updatePIDs, &rob);
-    ADIEncoder encoderL (1, 2, true), encoderR (3, 4, false), encoderM (5, 6, false);
+    ADIEncoder encoderL (1, 2, true), encoderR (3, 4, true), encoderM (5, 6, false);
     ADIEncoder FWenc (7, 8, false);
-
+    rob.base.odom.pos.X = 0;
+    rob.base.odom.pos.Y = 0;
     while (true) {
       rob.base.driveLR(master.rightY, master.leftY);
         //rob.LFrontBase.move(clamp(127,-127, PIDPower));
         //debugs
-        int i = 0;
-        for(const string& s : rob.debugString()){
-            lcd::print(i++, s.c_str());
-        }
         //lcd::print(1, (string("EncoderL6: ") + std::to_string( encoderR.get_value())).c_str() );
         //lcd::print(2, (string("EncoderR6: ") + std::to_string( encoderL.get_value())).c_str() );
         //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
         rob.intake.simpleControl(master.btnL1, master.btnL2);
         rob.indexer.simpleControl(master.btnR1, master.btnR2);
-        /////rob.lift.simpleControl(master.btnLEFT, master.btnRIGHT);
+        if(rob.FWVelGoal == 0) {
+            //only control the lift (same fw motres) when fw is off
+            rob.lift.simpleControl(master.btnLEFT, master.btnRIGHT);
+        }
         //if(master.btnUP) rob.testDriveFwds(15);
         //if(master.btnDOWN) rob.testRotation(90);
-        if(master.btnX) rob.base.turn(90);//testCurve(Position(20, 15, 0), 0.5);
+        if(master.btnX) rob.skills();//base.smoothDriveToPoint(10, 20, 0.5);
         //if(master.btnLEFT) rob.testMacro(115, 150);
         /*once all tests are done to satisfaction:
         if(master.btnUP) rob.part1();

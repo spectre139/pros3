@@ -4,12 +4,13 @@
 
 using namespace pros;
 void calculatePos(void* param){
-  ADIEncoder encL (1, 2, true), encR (3, 4, false), encM (5, 6, false);
+  ADIEncoder encL (1, 2, true), encR (3, 4, true), encM (5, 6, false);
 
   class Odometry* Odom = (Odometry*) param;
+  const float scaleLeft = 1;//1.0436;
 	for(;;){
 
-		float dR = encoderDistInch(encR.get_value())  - Odom->lastR;//change in right encoder
+		float dR = encoderDistInch(encR.get_value())*scaleLeft  - Odom->lastR;//change in right encoder
 		float dL = encoderDistInch(encL.get_value())  - Odom->lastL;//change in left
 		float dM = encoderDistInch(encM.get_value())  - Odom->lastM;//change in middle
 
@@ -27,7 +28,7 @@ void calculatePos(void* param){
 		Odom->t_pos.X += dCentral * cos(radHeading) + dM * sin(radHeading);
 		Odom->t_pos.Y += dCentral * sin(radHeading) - dM * cos(radHeading);
 		//add little vector after calculating H mech's position
-		const float distToCenter = 2.18524;//inches the center of the H mech to the center of r's rotation
+		const float distToCenter = 7.5;//inches the center of the H mech to the center of r's rotation
 		Odom->pos.heading = normAngle(Odom->t_pos.heading + 90);
 		Odom->pos.X = Odom->t_pos.X + distToCenter * cos(radHeading);
 		Odom->pos.Y = Odom->t_pos.Y + distToCenter * sin(radHeading) - distToCenter;

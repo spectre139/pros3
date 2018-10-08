@@ -9,6 +9,7 @@
 #define OFF false
 #define DRIVE 0
 #define ANGLE 1
+#define CURVE 2
 
 extern pros::ADIEncoder encoderL, encoderR, encoderM;
 
@@ -146,7 +147,7 @@ public:
             }
         }
     }
-private:
+//private:
     std::vector<pros::Motor> mots;
     std::vector<pros::ADIEncoder> encs;
     float lastVel = 0;
@@ -182,9 +183,8 @@ public://functions
         }
     }
     void moveTo(float goal, float thresh, float power = 127){//simple encoder move
-        float error = getSensorVal() - goal;
-        while(abs(error) > thresh){
-            move(sign(error) * power);
+        while(abs(getSensorVal() - goal) > thresh){
+            move(-sign(getSensorVal() - goal) * power);
         }
         move(0);
     }
@@ -209,22 +209,22 @@ public://functions
         lastVel = currentSensor;
         return velocity / 2.0; //(converting ticks/sec to rot/min
             //[(ticks/sec) * (60sec/1min) * (1rev/360ticks)] * 3:1 (GR) = (1/6)*3 = 3/6 = 1/2)
-    }
-    float getMotorVel(){
-        float sumMotVels = 0;//average of all MOTOR encoders in vector list
-        for(const pros::Motor& m : mots){
-            sumMotVels += m.get_actual_velocity();
         }
-        return sumMotVels / mots.size();//returns avg of all MOTOR encoders in vector list
+        float getMotorVel(){
+            float sumMotVels = 0;//average of all MOTOR encoders in vector list
+            for(const pros::Motor& m : mots){
+                sumMotVels += m.get_actual_velocity();
+            }
+            return sumMotVels / mots.size();//returns avg of all MOTOR encoders in vector list
 
-    }
-};
+        }
+    };
 
-class chassis{
+    class chassis{
     public:
         chassis(std::vector<pros::Motor> m, std::vector<PIDcontroller> p, Odometry o) :
         mots(m), pid(p), odom(o) {}
-    private:
+    //private:
         std::vector<pros::Motor> mots;//first 2 mots are RIGHT, second two are LEFT
         std::vector<PIDcontroller> pid;
         float lastDriveVel = 0, lastRotVel = 0;
@@ -259,81 +259,127 @@ class chassis{
             lastRotVel = currentSensor;
             return rotVel;//converting degrees/sec to ???
         }
-        void smoothDrive(int speed, const float angle, float sharpness = 1) {//drive base forwards
-            const float scalar = 5;//scalar for rotation
+        void smoothDrive(float speed, const float angle, float sharpness = 1) {//drive base forwards
+            const float scalar = 2;//scalar for rotation
             sharpness += 1;//parameter is from 0-1, do this addition to make sure it ranges from (1-2) [as explained below]
             speed = clamp(127, -127, speed);
             //for sharpness: 2 is direct point turn, 1 is turning off one side...
             //	it basically is just how much the different sides can be reversed to increase tha sharpness of the curve
             float dirSkew = limUpTo(127 * sharpness, scalar*normAngle(odom.pos.heading - angle));
-            driveLR(speed + dirSkew, speed - dirSkew);
+            driveLR(speed - dirSkew, speed + dirSkew);
         }
         //higher levels
         void turnTo(const float degrees){//assumed CW is true
-        	pid[ANGLE].goal = degrees;
-          pid[ANGLE].isRunning = true;
-        	//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
-        	while(abs(odom.pos.heading - pid[ANGLE].goal) > pid[ANGLE].thresh /*&& abs(rotVel) < 5*/){//waits for low velocity and close enoughness
-        		pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
-        		pros::delay(10);
-        	}
-          pid[ANGLE].isRunning = false;
-        	//final check and correction
-        	const int minSpeed = 50;//slow speed for robot's slight correction
-        	while(abs(normAngle(odom.pos.heading - pid[ANGLE].goal)) > pid[ANGLE].thresh){
-        		pointTurn(sign(normAngle(odom.pos.heading - pid[ANGLE].goal)) * minSpeed);
-        	}
-        	pointTurn(0);
-        	return;
+            pid[ANGLE].goal = degrees;
+            pid[ANGLE].isRunning = true;//TURN ON PID
+            //pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+            while(abs(odom.pos.heading - pid[ANGLE].goal) > pid[ANGLE].thresh /*&& abs(rotVel) < 5*/){//waits for low velocity and close enoughness
+                pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
+                pros::delay(10);
+            }
+            int t = 0;
+            while(t < 400){
+                pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
+                pros::delay(1);
+                t++;
+            }
+            pid[ANGLE].isRunning = false;//TURN OFF PID
+            //final check and correction
+            /*const int minSpeed = 50;//slow speed for robot's slight correction
+            while(abs(normAngle(odom.pos.heading - pid[ANGLE].goal)) > pid[ANGLE].thresh){
+                pointTurn(sign(normAngle(odom.pos.heading - pid[ANGLE].goal)) * minSpeed);
+            }*/
+            pointTurn(0);
+            return;
         }
         void turn(const float degrees){
             turnTo(normAngle(odom.pos.heading + degrees));//basically turns to the current + increment
             return;
         }
-        void fwds(const int amnt){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
-        	const int initEncRight = encoderR.get_value();
-        	const int initEncLeft = encoderL.get_value();
-        	pid[DRIVE].goal = amnt;
-        	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
-        	volatile float currentDist = 0.0;
-        	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh && abs(driveVel) < 5){
-        		currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
-        		fwdsDrive(pid[DRIVE].compute(currentDist));
-        		pros::delay(10);
-        	}
-        	//final check and correction
-        	const int minSpeed = 40;//slow speed for robot's slight correction
-        	while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
-        		currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
-        		fwdsDrive(-sign(currentDist - pid[DRIVE].goal) * minSpeed);
-        	}
-        	fwdsDrive(0);
-        	return;
+        void fwds(const int amnt, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+            const int initEncRight = encoderR.get_value();
+            const int initEncLeft = encoderL.get_value();
+            pid[DRIVE].goal = amnt;
+            pid[DRIVE].isRunning = true;//TURN ON PID
+            //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+            volatile float currentDist = 0.0;
+            while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+                pros::delay(1);
+            }
+            int t = 0;
+            while(t < 400){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+                pros::delay(1);
+                t++;
+            }
+            pid[DRIVE].isRunning = false;
+            //final check and correction
+            /*const int minSpeed = 30;//slow speed for robot's slight correction
+            while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                fwdsDrive(clamp(cap, -cap, -sign(currentDist - pid[DRIVE].goal) * minSpeed));
+            }*/
+            fwdsDrive(0);
+            return;
+        }
+        void fwdsAng(const int amnt, const float angle, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+            const int initEncRight = encoderR.get_value();
+            const int initEncLeft = encoderL.get_value();
+            pid[DRIVE].goal = amnt;
+            pid[DRIVE].isRunning = true;//TURN ON PID
+            //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+            volatile float currentDist = 0.0;
+            while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                smoothDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)), angle);
+                pros::delay(1);
+            }
+            int t = 0;
+            while(t < 400){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                smoothDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)), angle);
+                pros::delay(1);
+                t++;
+            }
+            pid[DRIVE].isRunning = false;
+            //final check and correction
+            /*const int minSpeed = 30;//slow speed for robot's slight correction
+            while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+                currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+                fwdsDrive(clamp(cap, -cap, -sign(currentDist - pid[DRIVE].goal) * minSpeed));
+            }*/
+            fwdsDrive(0);
+            return;
         }
         void driveToPoint(float x, float y){
-        	//first compute angle to goal
-        	//also divide by 0 is fine bc atan2 has error handling
-        	float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
-        	//then compute distance to goal
-        	float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
-        	turnTo(phi);//simple point turn`
-        	fwds(dist);//simple drive forwards
-        	return;
+            //first compute angle to goal
+            //also divide by 0 is fine bc atan2 has error handling
+            float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
+            //then compute distance to goal
+            float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
+            turnTo(phi);//simple point turn`
+            fwds(dist);//simple drive forwards
+            return;
         }
-        void smoothDriveToPoint(class Position goal, float sharpness = 1){
-        	float error = goal.distanceToPoint(odom.pos);
-        	pid[DRIVE].goal = 0;//goal is to have no distance between goal and current
-        	//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(error), -0.916209) + 2.05938);//fancy
-
-        	while(error > 3){//kinda bad... can be retuned n' stuff
-        		error = goal.distanceToPoint(odom.pos);
-        		//first compute angle to goal
+        void smoothDriveToPoint(float X, float Y, float sharpness = 1){
+            class Position goal(X, Y, 0);
+            float error = goal.distanceToPoint(odom.pos);
+            pid[CURVE].goal = 0;//goal is to have no distance between goal and current
+            //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(error), -0.916209) + 2.05938);//fancy
+            pid[CURVE].isRunning = false;
+            while(error > 3){//kinda bad... can be retuned n' stuff
+                error = goal.distanceToPoint(odom.pos);
+                //first compute angle to goal
                 float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
-        		//then drive at that angle
-        		smoothDrive(pid[DRIVE].computeERR(error), phi, sharpness);
-        	}
-        	smoothDrive(0, odom.pos.heading, 1);
-        	return;
+                //then drive at that angle
+                smoothDrive(7.5*error, phi, sharpness);
+            }
+            smoothDrive(0, odom.pos.heading, 1);
+            pid[CURVE].isRunning = false;
+            return;
         }
-    };
-    #endif
+};
+#endif

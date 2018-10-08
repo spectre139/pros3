@@ -63,10 +63,10 @@ public:
 	),
     base(//motors
 		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
-		//drive PID, then angle PID
-		{ PIDcontroller(0.5, 0.0, 0.0, 0.75, 10, true, false), PIDcontroller(1.7, 0.0, 0.0, 1.0,  10, true, false) },
+		//drive PID, then angle PID, then curve
+		{ PIDcontroller(14.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
 		//Odometry
-		Odometry(Position(0, 0, 0), Position(0, -10, 0)//,//actual position, tracker mech's position
+		Odometry(Position(0, 0, 0), Position(0, 0, 0)//,//actual position, tracker mech's position
 			//Odom Sensors:
 			//ADIEncoder(1, 2, true),//left encoder
 		//	ADIEncoder(3, 4, false),//right encoder
@@ -74,7 +74,7 @@ public:
 		)
 	){
 		base.odom.pos.X = 0;
-		base.odom.pos.Y = -10;
+		base.odom.pos.Y = 0;
 		base.odom.pos.heading = 90;
 	}
 
@@ -91,27 +91,66 @@ public://higher level functions
 		base.fwds(numInches);
 	}void testRotation(float degrees){
 		base.turn(degrees);
-	}void testCurve(class Position g, float sharpness){
-		base.smoothDriveToPoint(g, sharpness);
-	}void testMacro(float firstVel, float secondVel){
-		const float fwGR = 1.0/21.0;
-		flywheel.moveVel(firstVel);
-		while(abs(flywheel.velocity * fwGR - firstVel) > 5){//while not near target velocity
+	}	void testMacro(float power = 60){//has flywheel running and stuff
+		int t = 1;
+		while(t < 300){//time based
+			indexer.move(power);
+			t++;
+			delay(1);
+		}
+		indexer.move(-20);
+		/*FWVelGoal = 150;
+		delay(500);//wait 1 second while at good velocity
+		while(abs((flywheel.velocity/2.0) / 21.0 - FWVelGoal) > 5){//while not near target velocity
 			delay(10);
 		}
-		delay(1000);//wait 1 second while at good velocity
-		flywheel.moveVel(secondVel);
-		while(abs(flywheel.velocity * fwGR - secondVel) > 5){//while not near target velocity
-			delay(10);
-		}
-		delay(1000);//wait 1 second while at good velocity
-		flywheel.moveVel(0);
+		indexer.moveAmnt(500, 15);
+		delay(500);
+		FWVelGoal = 0;*/
 		return;
 	}
+	void capfliptest(){
+		//intake.move(-127);
+		//base.fwds(7);
+		base.fwds(-3);
+		intake.move(127);
+		base.fwds(11, 80);
+	}
+
 	//actual skills runs
 
-
-
+void circleTilebase(){
+	base.fwds(50);
+	base.turn(-90);
+	base.fwds(100);
+	base.turn(-90);
+	base.fwds(50);
+	base.turn(-90);
+	base.fwds(100);
+	base.turn(-90);
+	return;
+}
+void skills(){
+	intake.move(-127);
+	FWVelGoal = 60;
+	base.driveToPoint(0, 37);
+	capfliptest();
+	base.fwds(-43);
+	base.turn(90);
+	FWVelGoal = 150;
+	base.fwdsAng(60, base.odom.pos.heading);//, 0.5);
+	//base.turnTo(175);
+	int t = 0;
+	while(t<1000){
+		base.pointTurn(-sign(normAngle(base.odom.pos.heading - 175)) * 20);
+		t++;
+	}
+	indexer.moveAmnt(450, 10);
+	testMacro();
+	FWVelGoal = 150;
+	base.fwdsAng(20, base.odom.pos.heading);
+	testMacro(127);
+}
 
 	std::vector<string> debugString(){
 		std::vector<string> ret;
@@ -130,7 +169,7 @@ public://higher level functions
 		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
 		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
 		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
-		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity) + string(" Motors: ") + std::to_string( flywheel.getMotorVel() ));
+		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity/2) + string(" Motors: ") + std::to_string( flywheel.getMotorVel() ));
 		ret.push_back(string("base Vel: ") + std::to_string( base.driveVel) + string("; rot Vel: ") + std::to_string( base.rotVel));
 		ret.push_back(string("Angle Err: ") + std::to_string( base.pid[ANGLE].error));
 
