@@ -17,16 +17,16 @@ using namespace pros;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define flywheel1_port   1
-#define flywheel2_port   2
+#define flywheel1_port   3
+#define flywheel2_port   4
 
-#define intake_Port      4
+#define intake_Port      19
 #define indexer_Port     5
 
 #define motorLFront_Port 7
 #define motorLRear_Port  8
 #define motorRFront_Port 9
-#define motorRRear_Port  10
+#define motorRRear_Port  20
 
 void initMotors(){//i wonder... do i even need this?
     Motor LFrontBase_initializer (motorLFront_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);

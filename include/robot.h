@@ -22,16 +22,18 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define flywheel1_port   1
-#define flywheel2_port   2
+#define flywheel1_port   3
+#define flywheel2_port   4
 
-#define intake_Port      4
+#define intake_Port      19
 #define indexer_Port     5
 
 #define motorLFront_Port 7
 #define motorLRear_Port  8
 #define motorRFront_Port 9
-#define motorRRear_Port  10
+#define motorRRear_Port  20
+
+#define BACK true
 
 using namespace pros;
 
@@ -81,100 +83,115 @@ public:
     class mechanism flywheel, indexer, intake, lift;
     class chassis base;
 	float FWVelGoal = 0;
-public://higher level functions
+	public://higher level functions
 
-	void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
-		indexer.moveAmnt(amntTicks, 10);
-	}
-	//tests
-	void testDriveFwds(float numInches){
-		base.fwds(numInches);
-	}void testRotation(float degrees){
-		base.turn(degrees);
-	}	void testMacro(float power = 60){//has flywheel running and stuff
-		int t = 1;
-		while(t < 300){//time based
-			indexer.move(power);
-			t++;
-			delay(1);
+		void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given number of encoder ticks)
+			indexer.moveAmnt(amntTicks, 10);
 		}
-		indexer.move(-20);
-		/*FWVelGoal = 150;
-		delay(500);//wait 1 second while at good velocity
-		while(abs((flywheel.velocity/2.0) / 21.0 - FWVelGoal) > 5){//while not near target velocity
-			delay(10);
+		//tests
+		void testDriveFwds(float numInches){
+			base.fwds(numInches, 400);
+		}void testRotation(float degrees){
+			base.turn(degrees);
+		}	void testMacro(float power = 60){//has flywheel running and stuff
+			int t = 1;
+			while(t < 300){//time based
+				indexer.move(power);
+				t++;
+				delay(1);
+			}
+			indexer.move(-20);
+			/*FWVelGoal = 150;
+			delay(500);//wait 1 second while at good velocity
+			while(abs((flywheel.velocity/2.0) / 21.0 - FWVelGoal) > 5){//while not near target velocity
+				delay(10);
+			}
+			indexer.moveAmnt(500, 15);
+			delay(500);
+			FWVelGoal = 0;*/
+			return;
 		}
-		indexer.moveAmnt(500, 15);
-		delay(500);
-		FWVelGoal = 0;*/
+		void capFlip(){
+			//intake.move(-127);
+			//base.fwds(7);
+			base.fwds(-3, 10);
+			intake.move(127);
+			delay(50);
+			base.fwds(11, 50, 80);
+		}
+
+		//actual skills runs
+
+	void circleTilebase(){
+		base.fwds(50, 400);
+		base.turn(-90);
+		base.fwds(100, 400);
+		base.turn(-90);
+		base.fwds(50, 400);
+		base.turn(-90);
+		base.fwds(100, 400);
+		base.turn(-90);
 		return;
 	}
-	void capfliptest(){
-		//intake.move(-127);
-		//base.fwds(7);
-		base.fwds(-3);
-		intake.move(127);
-		base.fwds(11, 80);
+	void skills(){
+	base.odom.pos.X = 0;
+	base.odom.pos.Y = 0;
+		intake.move(-127);//intake preload
+		FWVelGoal = 70;//low power flywheel
+		base.driveToPoint(0, 37);//drive fwds
+		capFlip();
+		base.driveToPoint(0, 5, BACK);//fwds(-43, 400);
+		indexer.moveAmnt(600, 10);//primes the balls
+		base.turn(90, 400);
+		FWVelGoal = 150;
+		indexer.moveAmnt(-400, 10);
+
+		base.fwdsAng(60, 400, base.odom.pos.heading);//, 0.5);
+		//base.turnTo(175);
+		indexer.moveAmnt(500, 10);//primes the balls
+		int t = 0;
+		while(t<400){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 180)) * 20);
+			t++;
+		}
+		indexer.moveAmnt(350, 10);
+
+		//indexer.moveTime(300, 60);
+		base.turnTo(190, 300, 4);//turn to hit low flag
+		FWVelGoal = 150;
+		base.fwdsAng(17, 400, base.odom.pos.heading);
+		indexer.moveAmnt(350, 20);
+		base.fwds(-10, 200);
+		base.turnTo(200, 500, 4);
+		FWVelGoal = 0;
+		base.fwds(10, 200);
+		delay(500);
+		base.fwds(-30, 400);
 	}
 
-	//actual skills runs
+		std::vector<string> debugString(){
+			std::vector<string> ret;
+			//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));
+			/*ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
+			ret.push_back(string("Flywheel1 Temp:") + std::to_string(sprocket1.get_temperature()));
+			ret.push_back(string("Flywheel2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
+			ret.push_back(string("Flywheel2 Temp:") + std::to_string(sprocket2.get_temperature()));
+			if(flyWheelVelPID.getRunningState()) ret.push_back(string("PID Running: YES"));
+			else ret.push_back(string("PID Running: NO"));
+			ret.pus h_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
+			*/
+			ret.push_back(string("EncL: ") + std::to_string( encoderL.get_value())
+						 +string("; EncR: ") + std::to_string( encoderR.get_value())
+						 +string("; EncM: ") + std::to_string( encoderM.get_value()));
+			ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
+			ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
+			//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
+			ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity/2) + string(" Motors: ") + std::to_string( flywheel.getMotorVel() ));
+			ret.push_back(string("base Vel: ") + std::to_string( base.driveVel) + string("; rot Vel: ") + std::to_string( base.rotVel));
+			ret.push_back(string("Angle Err: ") + std::to_string( base.pid[ANGLE].error));
 
-void circleTilebase(){
-	base.fwds(50);
-	base.turn(-90);
-	base.fwds(100);
-	base.turn(-90);
-	base.fwds(50);
-	base.turn(-90);
-	base.fwds(100);
-	base.turn(-90);
-	return;
-}
-void skills(){
-	intake.move(-127);
-	FWVelGoal = 60;
-	base.driveToPoint(0, 37);
-	capfliptest();
-	base.fwds(-43);
-	base.turn(90);
-	FWVelGoal = 150;
-	base.fwdsAng(60, base.odom.pos.heading);//, 0.5);
-	//base.turnTo(175);
-	int t = 0;
-	while(t<1000){
-		base.pointTurn(-sign(normAngle(base.odom.pos.heading - 175)) * 20);
-		t++;
-	}
-	indexer.moveAmnt(450, 10);
-	testMacro();
-	FWVelGoal = 150;
-	base.fwdsAng(20, base.odom.pos.heading);
-	testMacro(127);
-}
-
-	std::vector<string> debugString(){
-		std::vector<string> ret;
-		//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));
-		/*ret.push_back(string("Flywheel1 Vel:") + std::to_string(sprocket1.get_actual_velocity()));
-		ret.push_back(string("Flywheel1 Temp:") + std::to_string(sprocket1.get_temperature()));
-		ret.push_back(string("Flywheel2 Vel:") + std::to_string(sprocket2.get_actual_velocity()));
-		ret.push_back(string("Flywheel2 Temp:") + std::to_string(sprocket2.get_temperature()));
-		if(flyWheelVelPID.getRunningState()) ret.push_back(string("PID Running: YES"));
-		else ret.push_back(string("PID Running: NO"));
-		ret.pus h_back(string("PID Goal:") + std::to_string(flyWheelVelPID.getGoal()));
-		*/
-		ret.push_back(string("EncL: ") + std::to_string( encoderL.get_value())
-					 +string("; EncR: ") + std::to_string( encoderR.get_value())
-					 +string("; EncM: ") + std::to_string( encoderM.get_value()));
-		ret.push_back(string("Pos X: ") + std::to_string( base.odom.pos.X) + string(" Pos Y: ") + std::to_string( base.odom.pos.Y));
-		ret.push_back(string("Heading: ") + std::to_string( base.odom.pos.heading));
-		//ret.push_back(string("FlywheelPos: ") + std::to_string( flywheelEnc.get_value()));
-		ret.push_back(string("FlywheelVel(rpm): ") + std::to_string( flywheel.velocity/2) + string(" Motors: ") + std::to_string( flywheel.getMotorVel() ));
-		ret.push_back(string("base Vel: ") + std::to_string( base.driveVel) + string("; rot Vel: ") + std::to_string( base.rotVel));
-		ret.push_back(string("Angle Err: ") + std::to_string( base.pid[ANGLE].error));
-
-		//ret.push_back(string("Error Val: ") + strerror(errno));
-		return ret;
-	}
-};
-#endif
+			//ret.push_back(string("Error Val: ") + strerror(errno));
+			return ret;
+		}
+	};
+	#endif
