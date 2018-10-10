@@ -134,15 +134,15 @@ public:
 		return;
 	}
 	void skills(){
-	base.odom.pos.X = 0;
-	base.odom.pos.Y = 0;
-		intake.move(-127);//intake preload
+		base.odom.pos.X = 0;
+		base.odom.pos.Y = 0;
+		intake.move(-60);//intake preload
 		FWVelGoal = 70;//low power flywheel
 		base.driveToPoint(0, 37);//drive fwds
 		capFlip();
 		base.driveToPoint(0, 5, BACK);//fwds(-43, 400);
-		indexer.moveAmnt(600, 10);//primes the balls
-		base.turn(90, 400);
+		//indexer.moveAmnt(600, 10);//primes the balls
+		base.turn(90, 500);
 		FWVelGoal = 150;
 		indexer.moveAmnt(-400, 10);
 
@@ -155,14 +155,13 @@ public:
 			t++;
 		}
 		indexer.moveAmnt(350, 10);
-
 		//indexer.moveTime(300, 60);
-		base.turnTo(190, 300, 4);//turn to hit low flag
+		base.turn(10, 500);//turn to hit low flag
 		FWVelGoal = 150;
 		base.fwdsAng(17, 400, base.odom.pos.heading);
 		indexer.moveAmnt(350, 20);
 		base.fwds(-10, 200);
-		base.turnTo(200, 500, 4);
+		base.turn(10, 500);
 		FWVelGoal = 0;
 		base.fwds(10, 200);
 		delay(500);
