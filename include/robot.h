@@ -134,38 +134,54 @@ public:
 		return;
 	}
 	void skills(){
+		//--reset odom? sometimes works... usually dosent... smh
 		base.odom.pos.X = 0;
 		base.odom.pos.Y = 0;
+		//--get ball under cap
 		intake.move(-60);//intake preload
-		FWVelGoal = 70;//low power flywheel
+		FWVelGoal = 60;//low power flywheel
 		base.driveToPoint(0, 37);//drive fwds
+		//--flip cap
 		capFlip();
 		base.driveToPoint(0, 5, BACK);//fwds(-43, 400);
 		//indexer.moveAmnt(600, 10);//primes the balls
 		base.turn(90, 500);
-		FWVelGoal = 150;
 		indexer.moveAmnt(-400, 10);
-
+		//--start driving to nearest flags
+		FWVelGoal = 150;
 		base.fwdsAng(60, 400, base.odom.pos.heading);//, 0.5);
 		//base.turnTo(175);
 		indexer.moveAmnt(500, 10);//primes the balls
+		//--time basedd self correction for angle (idk if needed)
 		int t = 0;
-		while(t<400){
+		while(t<1000){
 			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 180)) * 20);
 			t++;
+			delay(1);
 		}
+		//--first ball (high flag)
 		indexer.moveAmnt(350, 10);
 		//indexer.moveTime(300, 60);
-		base.turn(10, 500);//turn to hit low flag
-		FWVelGoal = 150;
-		base.fwdsAng(17, 400, base.odom.pos.heading);
-		indexer.moveAmnt(350, 20);
-		base.fwds(-10, 200);
-		base.turn(10, 500);
-		FWVelGoal = 0;
-		base.fwds(10, 200);
+		//--turn to get second ball (medium flag needs special angle)
+		base.turn(10, 500);//turn to hit low flag//NEEDS PID
+		base.fwdsAng(17, 400, base.odom.pos.heading);//drive closer to flag to hit
+		indexer.moveAmnt(350, 20);//shoot ball
+		//--time to get the first low flag
+		//----first turn to get a smooth curve to ram the low flag
+		base.turn(10, 300);
+		//--then curve into the ideal location
+		base.smoothDriveToPoint(96, 0, 0.5);
 		delay(500);
-		base.fwds(-30, 400);
+		base.driveToPoint(72, 0, BACK);
+		base.turnTo(90, 500);//reset position. can probs ram against fence idk.
+		/*
+		base.fwds(-10, 200);//drive back to not get stuck on flag
+		FWVelGoal = 0;//turn off flywheel
+		base.turn(10, 500);//turn to get sharper nice angle
+		base.fwds(10, 200);//ram into flag
+		*/
+		delay(500);
+		base.fwds(-20, 400);//finish auton... for now.
 	}
 
 		std::vector<string> debugString(){

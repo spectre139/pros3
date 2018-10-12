@@ -402,5 +402,58 @@ public://functions
 		pid[CURVE].isRunning = false;
 		return;
 	}
+    /*
+    //TUNE PID functions
+
+    float kP = 10;
+    float DkP = 2;
+    volatile int battery = nImmediateBatteryLevel;
+    //results in (97.0449 x^-1.29993 + 0.993483)
+    struct PIDs gen;
+    void tuneDistPID(float dist){
+    	const int maxWait = 200;//maximum time for PID to settle
+    	float lastResult = 0.0;
+    	const int initEncRight = SensorValue[Right];
+    	const int initEncLeft = SensorValue[Left];
+    	for(int j = 2; j <= 10; j++){
+    		DkP = 2;
+    		for(int a = 0; a < 15; a++){
+    			battery = nImmediateBatteryLevel;
+    			initPID(&gen, kP, 0.0, 0.0, 1.5, 300, true);//reinits PID
+    			gen.goal = dist*j;
+    			volatile float currentDist = 0.0;
+    			clearTimer(T3);
+    			while( time1[T3] < (maxWait * gen.goal)){
+    				currentDist = encoderDistInch( avg(SensorValue[Right] - initEncRight, SensorValue[Left] - initEncLeft));
+    				fwdsDrive(pidCompute(&gen, currentDist));
+    				delay(10);
+    			}
+    			delay(200);
+    			//change the k's
+    			if(currentDist > gen.goal) kP -= DkP;
+    			else {
+    				kP += DkP;
+    				DkP *= 0.5;//DkD gets smaller
+    			}
+    			lastResult = currentDist;
+    			//come back
+    			clearTimer(T3);
+    			gen.goal = 0;
+    			while(time1[T3] < maxWait * dist *j ){
+    				currentDist = encoderDistInch( avg(SensorValue[Right] - initEncRight, SensorValue[Left] - initEncLeft));
+    				fwdsDrive(pidCompute(&gen, currentDist));
+    			}
+    			delay(200);
+    			writeDebugStream("amnt: %.3f   &&    ", dist*j);  // writes the current value of int 'x' to the debug stream
+    			writeDebugStream("result: %.3f", lastResult);  // writes the current value of int 'x' to the debug stream
+    			writeDebugStreamLine("kP: %.3f", kP);  // writes the current value of int 'x' to the debug stream
+
+    		}
+    		writeDebugStream("FINAL amnt: %.3f   &&    ", dist*j);  // writes the current value of int 'x' to the debug stream
+    		writeDebugStreamLine("FINAL kP: %.3f", kP);  // writes the current value of int 'x' to the debug stream
+
+    	}
+    }
+    */
 };
 #endif
