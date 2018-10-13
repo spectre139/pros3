@@ -66,7 +66,7 @@ public:
     base(//motors
 		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
 		//drive PID, then angle PID, then curve
-		{ PIDcontroller(14.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
+		{ PIDcontroller(9.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
 		//Odometry
 		Odometry(Position(0, 0, 0), Position(0, 0, 0)//,//actual position, tracker mech's position
 			//Odom Sensors:
@@ -112,12 +112,17 @@ public:
 			return;
 		}
 		void capFlip(){
-			//intake.move(-127);
+			intake.move(-127);
 			//base.fwds(7);
 			base.fwds(-3, 10);
+			delay(350);
 			intake.move(127);
-			delay(50);
 			base.fwds(11, 50, 80);
+		}
+		void capFlipNoIntake(){
+			intake.move(127);
+			delay(350);
+			base.fwds(8, 50, 80);
 		}
 
 		//actual skills runs
@@ -133,55 +138,161 @@ public:
 		base.turn(-90);
 		return;
 	}
+	void resetOdom(class Odometry* o){
+		o->resetEncoders = true;
+		o->lastL = o->lastM = o->lastR = 0;
+		o->pos.X = 0;
+		o->pos.Y = 0;
+		o->pos.heading = 90;
+	}
 	void skills(){
+		resetOdom(&base.odom);
 		//--reset odom? sometimes works... usually dosent... smh
 		base.odom.pos.X = 0;
 		base.odom.pos.Y = 0;
 		//--get ball under cap
-		intake.move(-60);//intake preload
+		intake.move(-90);//intake preload
 		FWVelGoal = 60;//low power flywheel
-		base.driveToPoint(0, 37);//drive fwds
+		base.driveToPoint(base.odom.pos.X, 37);//drive fwds
 		//--flip cap
 		capFlip();
-		base.driveToPoint(0, 5, BACK);//fwds(-43, 400);
-		//indexer.moveAmnt(600, 10);//primes the balls
-		base.turn(90, 500);
-		indexer.moveAmnt(-400, 10);
-		//--start driving to nearest flags
-		FWVelGoal = 150;
-		base.fwdsAng(60, 400, base.odom.pos.heading);//, 0.5);
-		//base.turnTo(175);
-		indexer.moveAmnt(500, 10);//primes the balls
-		//--time basedd self correction for angle (idk if needed)
 		int t = 0;
-		while(t<1000){
-			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 180)) * 20);
-			t++;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 90)) * 5);
 			delay(1);
+			t++;
 		}
+		base.driveToPoint(0, 4, BACK);//fwds(-43, 400);
+		//indexer.moveAmnt(600, 10);//primes the balls
+		base.turn(90.7, 400);
+		indexer.moveAmnt(-200, 10);
+		//--start driving to nearest flags
+		intake.move(0);
+		FWVelGoal = 150;
+		indexer.moveAmnt(300, 10);//primes the balls
+		//base.smoothDriveToPoint(-69, 6, 0.7);
+		base.fwdsAng(62, 400, 180.3);//, 0.5);
+		//base.turnTo(175);
+		//--time basedd self correction for angle (idk if needed)
+		t = 0;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 179.5)) * 5);
+			delay(1);
+			t++;
+		}
+		//base.turnTo(180, 500);
 		//--first ball (high flag)
-		indexer.moveAmnt(350, 10);
+		indexer.moveAmnt(170, 10);
+		FWVelGoal = 170;
 		//indexer.moveTime(300, 60);
 		//--turn to get second ball (medium flag needs special angle)
-		base.turn(10, 500);//turn to hit low flag//NEEDS PID
-		base.fwdsAng(17, 400, base.odom.pos.heading);//drive closer to flag to hit
+	//	base.turn(8, 100);//turn to hit low flag//NEEDS PID
+		delay(300);
+		int t2 = 0;
+		while(t2<500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 171)) * 6);
+			t2++;
+			delay(1);
+		}
+		base.fwdsAng(16.5, 400, base.odom.pos.heading);//drive closer to flag to hit
 		indexer.moveAmnt(350, 20);//shoot ball
+		base.fwds(-8, 300);
+		delay(500);
+		//base.fwds(-10, 100);
 		//--time to get the first low flag
 		//----first turn to get a smooth curve to ram the low flag
-		base.turn(10, 300);
+		base.turn(20, 300);
+		intake.move(20);
+		FWVelGoal = 50;
 		//--then curve into the ideal location
-		base.smoothDriveToPoint(96, 0, 0.5);
+		base.smoothDriveToPointTIME(-93, 0, 0.6, 1300);
+		//base.fwds(10, 0);//(-93, 3);
+		//base.fwds(, 100);
+	/*	t = 0;
+		while(t < 250){
+			base.fwdsDrive(100);
+			t++;
+			delay(1);
+		}*/
+
 		delay(500);
-		base.driveToPoint(72, 0, BACK);
-		base.turnTo(90, 500);//reset position. can probs ram against fence idk.
+		base.driveToPoint(-47, base.odom.pos.Y, BACK);
+		base.turnToKP(91.5, 1.5, 900);//reset position. can probs ram against fence idk.
+		delay(200);
+		intake.move(-60);//intake preload
+		FWVelGoal = 60;//low power flywheel
+		base.fwds(37, 200);//, 200);//drive fwds
+
+		//--flip cap
+		capFlip();
+		base.fwds(-8, 200);
+		//base.fwds(10, 100);
+		base.turn(90, 400);//aim at the flags
+		//hit high flag
+		t = 0;
+		while(t < 300){
+			base.fwdsDrive(-80);
+			delay(1);
+			t++;
+		}//--HARD RESETs
+		//resetOdom(&base.odom);
+		intake.move(127);
+		base.smoothDriveToPoint(base.odom.pos.X - 24, base.odom.pos.Y - 15, 0.75);
+		base.fwds(8, 100, 70);
+		//capFlip();
+		//--drive to hit low flag 2
+		intake.move(0);
+		base.fwds(-16, 300);
+		//base.turn(-120);
+		base.driveToPointTIME(-90, 36, 1000);
+		base.fwds(0, 0);
+		delay(400);
+		FWVelGoal = 150;
+		base.driveToPointTIME(-63, 38, 2000, BACK);
+		base.turnTo(90+80, 300);
+		indexer.moveAmnt(600, 10);
+		FWVelGoal = 50;//low power
+		intake.move(127);
+		base.smoothDriveToPoint(base.odom.pos.X - 19, 98, 0.6);
+		delay(500);
+		base.fwds(-15, 100);
+		intake.move(0);
+		base.driveToPoint(base.odom.pos.X - 19, base.odom.pos.Y);
+		delay(300);
+		/*
+		base.fwds(-48, 300);
+		base.turnTo(90, 400);
+		base.fwds(13, 300);
+		base.turnTo(0, 400);
+		base.fwds(48, 400);*/
+		return;
+
+
+
+
+		FWVelGoal = 150;//high power (soon gonna hit high flag pow)
+		indexer.moveAmnt(650, 10);//shoot ball
+		//--ram into low flag
+		base.fwds(40, 200);
+		delay(300);
+		base.fwds(-20, 200);
+		//--time to get that other cap
+		base.turnTo(179, 500);
+		intake.move(-60);//intake preload
+		FWVelGoal = 60;//low power flywheel
+		base.fwds(27, 200);//drive fwds
+		//--flip cap
+		capFlip();
+		base.fwds(-10, 100);
+		base.turnTo(0, 200);
+		return;//done for now.
 		/*
 		base.fwds(-10, 200);//drive back to not get stuck on flag
 		FWVelGoal = 0;//turn off flywheel
 		base.turn(10, 500);//turn to get sharper nice angle
 		base.fwds(10, 200);//ram into flag
 		*/
-		delay(500);
-		base.fwds(-20, 400);//finish auton... for now.
+	//	base.fwds(-20, 400);//finish auton... for now.
 	}
 
 		std::vector<string> debugString(){

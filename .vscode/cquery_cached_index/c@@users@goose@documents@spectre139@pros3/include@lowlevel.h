@@ -30,7 +30,8 @@ public:
     {
     }//init constructor defaulted
     Position pos, t_pos;
-    float wheelWidth = 8.85;//distance betweenn L&Rtrackers on base (inch)
+    bool resetEncoders = false;
+    float wheelWidth = 8.75;//distance betweenn L&Rtrackers on base (inch)
     float lastL = 0, lastR = 0, lastM = 0;
 };
 class vec3 {
@@ -281,12 +282,12 @@ public://functions
         }
 
 	//higher levels
-	void turnTo(const float degrees, const int timeThresh, const float newKP = 1.75){//assumed CW is true
+  void turnTo(const float degrees, const int timeThresh = 400){//assumed CW is true
     float oldKP = pid[ANGLE].kP;
     pid[ANGLE].goal = degrees;
-    pid[ANGLE].kP = newKP;
 		pid[ANGLE].isRunning = true;//TURN ON PID
 		//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+    pid[ANGLE].kP = clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
 		while(abs(odom.pos.heading - pid[ANGLE].goal) > pid[ANGLE].thresh /*&& abs(rotVel) < 5*/){//waits for low velocity and close enoughness
 			pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
 			delay(10);
@@ -307,11 +308,50 @@ public://functions
 		pointTurn(0);
 		return;
 	}
+  void turnToTIME(const float degrees, const int timeThresh ){//assumed CW is true
+    float oldKP = pid[ANGLE].kP;
+    pid[ANGLE].goal = degrees;
+		pid[ANGLE].isRunning = true;//TURN ON PID
+		//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+    pid[ANGLE].kP = clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
+		int t = 0;
+		while(t < timeThresh){
+			pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
+			delay(1);
+			t++;
+		}
+		pid[ANGLE].isRunning = false;//TURN OFF PID
+    pid[ANGLE].kP = oldKP;
+		pointTurn(0);
+		return;
+	}
+  void turnToKP(const float degrees, const float newkP, const int timeThresh = 400){//assumed CW is true
+    float oldKP = pid[ANGLE].kP;
+    pid[ANGLE].goal = degrees;
+		pid[ANGLE].isRunning = true;//TURN ON PID
+		//pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+    pid[ANGLE].kP = newkP;//clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
+		int t = 0;
+		while(t < timeThresh){
+			pointTurn(pid[ANGLE].computeAngle(odom.pos.heading));
+			delay(1);
+			t++;
+		}
+		pid[ANGLE].isRunning = false;//TURN OFF PID
+    pid[ANGLE].kP = oldKP;
+		//final check and correction
+		/*const int minSpeed = 50;//slow speed for robot's slight correction
+		while(abs(normAngle(odom.pos.heading - pid[ANGLE].goal)) > pid[ANGLE].thresh){
+		pointTurn(sign(normAngle(odom.pos.heading - pid[ANGLE].goal)) * minSpeed);
+		}*/
+		pointTurn(0);
+		return;
+	}
 	void turn(const float degrees, const int timeThresh = 400){
 		turnTo(normAngle(odom.pos.heading + degrees), timeThresh);//basically turns to the current + increment
 		return;
 	}
-	void fwds(const int amnt, const int timeThresh, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+  void fwds(const float amnt, const int timeThresh, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
 		const int initEncRight = encoderR.get_value();
 		const int initEncLeft = encoderL.get_value();
 		pid[DRIVE].goal = amnt;
@@ -340,7 +380,25 @@ public://functions
 		fwdsDrive(0);
 		return;
 	}
-	void fwdsAng(const int amnt, const int timeThresh, const float angle, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+  void fwdsTIME(const float amnt, const int timeThresh, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+		const int initEncRight = encoderR.get_value();
+		const int initEncLeft = encoderL.get_value();
+		pid[DRIVE].goal = amnt;
+		pid[DRIVE].isRunning = true;//TURN ON PID
+		//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+		volatile float currentDist = 0.0;
+    int t = 0;
+		while(t < timeThresh){
+			currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+			fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+			delay(1);
+			t++;
+		}
+		pid[DRIVE].isRunning = false;
+		fwdsDrive(0);
+		return;
+	}
+	void fwdsAng(const float amnt, const int timeThresh, const float angle, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
 		const int initEncRight = encoderR.get_value();
 		const int initEncLeft = encoderL.get_value();
 		pid[DRIVE].goal = amnt;
@@ -369,7 +427,7 @@ public://functions
 		fwdsDrive(0);
 		return;
 	}
-	void driveToPoint(float x, float y, bool isBackwards = false){
+  void driveToPoint(float x, float y, bool isBackwards = false){
 		//first compute angle to goal
 		//also divide by 0 is fine bc atan2 has error handling
 		float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
@@ -385,6 +443,23 @@ public://functions
 		}
 		return;
 	}
+  void driveToPointTIME(float x, float y, float timeVar, bool isBackwards = false){
+		//first compute angle to goal
+		//also divide by 0 is fine bc atan2 has error handling
+    timeVar*=0.5;//only give half to each
+		float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
+		//then compute distance to goal
+		float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
+		if(!isBackwards) {//normal turn to angle and drive
+      turnToTIME(phi, timeVar);//simple point turn
+			fwdsTIME(dist, timeVar);//simple drive forwards
+		}
+		else {//drive to point, but backwards, so back reaches the point first.
+			turnToTIME(normAngle(phi + 180), timeVar);//simple point turn (but backwards)
+			fwdsTIME(-dist, timeVar);//simple drive forwards
+		}
+		return;
+	}
 	void smoothDriveToPoint(float X, float Y, float sharpness, bool isBackwards = false){
 		class Position goal(X, Y, 0);
 		float error = goal.distanceToPoint(odom.pos);
@@ -394,13 +469,101 @@ public://functions
 		while(error > 3){//kinda bad... can be retuned n' stuff
 			error = goal.distanceToPoint(odom.pos);
 			//first compute angle to goal
-			float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
-			//then drive at that angle
-			smoothDrive(7.5*error, phi, sharpness);
+      if(!isBackwards) {//normal turn to angle and drive
+        float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
+        //then drive at that angle
+        smoothDrive(7.5*error, phi, sharpness);
+  		}
+  		else {//drive to point, but backwards, so back reaches the point first.
+        float phi = normAngle(180 + toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
+        //then drive at that angle
+        smoothDrive(-7.5*error, phi, sharpness);
+  		}
 		}
 		fwds(0, 0);
 		pid[CURVE].isRunning = false;
 		return;
 	}
+
+	void smoothDriveToPointTIME(float X, float Y, float sharpness, float timevar, bool isBackwards = false){
+		class Position goal(X, Y, 0);
+		float error = goal.distanceToPoint(odom.pos);
+		pid[CURVE].goal = 0;//goal is to have no distance between goal and current
+		//pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(error), -0.916209) + 2.05938);//fancy
+		pid[CURVE].isRunning = false;
+    int t = 0;
+		while(t < timevar){//kinda bad... can be retuned n' stuff
+			error = goal.distanceToPoint(odom.pos);
+			//first compute angle to goal
+      if(!isBackwards) {//normal turn to angle and drive
+        float phi = normAngle(toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
+        //then drive at that angle
+        smoothDrive(7.5*error, phi, sharpness);
+  		}
+  		else {//drive to point, but backwards, so back reaches the point first.
+        float phi = normAngle(180 + toDeg(atan2((goal.Y - odom.pos.Y), (goal.X - odom.pos.X))));
+        //then drive at that angle
+        smoothDrive(-7.5*error, phi, sharpness);
+  		}
+      t++;
+      delay(1);
+		}
+		fwds(0, 0);
+		pid[CURVE].isRunning = false;
+		return;
+	}
+
+    //TUNE PID functions
+/*
+    float newkP = 1;
+    float DkP = 1;
+    //results in (97.0449 x^-1.29993 + 0.993483)
+    void tuneDistPID(float dist){
+    	const int maxWait = 200;//maximum time for PID to settle
+      float goal = 0;
+    	float lastResult = 0.0;
+    	const int initEncRight = encoderR.get_value();
+    	const int initEncLeft = encoderL.get_value();
+    	for(int j = 1; j <= 10; j++){
+    		DkP = 2;
+    		for(int a = 0; a < 15; a++){
+    			goal = dist*j;
+    			volatile float currentDist = 0.0;
+          int t = 0;
+    			while( t < maxWait * goal){
+    				currentDist = encoderDistInch( avg(encoderR.get_value() - initEncRight, encoderL.get_value() - initEncLeft));
+    				fwdsDrive( newkP*currentDist);//simulating a simple PID with kI and kD of 0
+            t++;
+            delay(1);
+    			}
+    			delay(200);
+
+    			//change the k's
+    			if(currentDist > goal) newkP -= DkP;
+    			else {
+    				newkP += DkP;
+    				DkP *= 0.5;//DkD gets smaller
+    			}
+    			lastResult = currentDist;
+    			//come back
+    			goal = 0;
+          t = 0;//reset timer
+    			while(t < maxWait * dist * j ){
+            currentDist = encoderDistInch( avg(encoderR.get_value() - initEncRight, encoderL.get_value() - initEncLeft));
+    				fwdsDrive( newkP*currentDist);//simulating a simple PID with kI and kD of 0
+            delay(1);
+            t++;
+    			}
+    			delay(200);
+    			writeDebugStream("amnt: %.3f   &&    ", dist*j);  // writes the current value of int 'x' to the debug stream
+    			writeDebugStream("result: %.3f", lastResult);  // writes the current value of int 'x' to the debug stream
+    			writeDebugStreamLine("kP: %.3f", kP);  // writes the current value of int 'x' to the debug stream
+
+    		}
+    		writeDebugStream("FINAL amnt: %.3f   &&    ", dist*j);  // writes the current value of int 'x' to the debug stream
+    		writeDebugStreamLine("FINAL kP: %.3f", kP);  // writes the current value of int 'x' to the debug stream
+
+    	}
+    }*/
 };
 #endif
