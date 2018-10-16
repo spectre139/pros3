@@ -152,6 +152,7 @@ public:
     std::vector<pros::Motor> mots;
     std::vector<pros::ADIEncoder> encs;
     float lastVel = 0;
+  int upDog = 0;
 public://functions
     class PIDcontroller pid;
     float velocity = 0;
@@ -192,6 +193,32 @@ public://functions
     void simpleControl(int buttonUp, int buttonDown, int power = 127){
         move(buttonUp*power - buttonDown*power);//simple up down control with 2 buttons (perf for indexer)
     }
+
+    int toggeru(int urMother){ // ask me what upDog is - Uday
+      if(urMother == 1){
+
+      if(upDog == 2){
+        move(127);
+        upDog = 0;
+        delay(300);
+        return 1;
+
+      }
+      if(upDog == 1){
+        move(-127);
+        upDog++;
+        delay(300);
+        return 1;
+      }
+if(upDog == 0){
+  move(0);
+upDog++;
+delay(300);
+return 1;
+}
+
+}
+}
     void moveAmnt(float amnt, float thresh, float power = 127){//simple encoder move
         float starting = getSensorVal();
         moveTo(starting + amnt, thresh, power);//moves to the position with AMNT as a constant quantity
