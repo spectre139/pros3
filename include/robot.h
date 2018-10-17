@@ -115,14 +115,15 @@ public:
 			intake.move(-127);
 			//base.fwds(7);
 			base.fwds(-3, 10);
-			delay(350);
+			delay(550);
 			intake.move(127);
 			base.fwds(11, 50, 80);
+			delay(100);
 		}
 		void capFlipNoIntake(){
 			intake.move(127);
 			delay(350);
-			base.fwds(8, 50, 80);
+			base.fwds(10, 50, 80);
 		}
 
 		//actual skills runs
@@ -216,21 +217,29 @@ public:
 		}*/
 
 		delay(500);
-		base.driveToPoint(-47, base.odom.pos.Y, BACK);
-		base.turnToKP(91.5, 1.5, 900);//reset position. can probs ram against fence idk.
+		int t3 = 0;
+		while(t3<500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 180)) * 8);
+			t3++;
+			delay(1);
+		}
+		base.driveToPointTIME(-54, 5, 2000, BACK);
+		base.fwds(0, 0);
+		delay(500);
+		base.turnToKP(90, 1.5, 1500);//reset position. can probs ram against fence idk.
 		delay(200);
 		intake.move(-60);//intake preload
 		FWVelGoal = 60;//low power flywheel
-		base.fwds(37, 200);//, 200);//drive fwds
+		base.fwds(40, 200);//, 200);//drive fwds
 
 		//--flip cap
 		capFlip();
-		base.fwds(-8, 200);
+		base.fwds(-11.5, 200);
 		//base.fwds(10, 100);
 		base.turn(90, 400);//aim at the flags
 		//hit high flag
 		t = 0;
-		while(t < 300){
+		while(t < 400){
 			base.fwdsDrive(-80);
 			delay(1);
 			t++;
@@ -238,27 +247,28 @@ public:
 		//resetOdom(&base.odom);
 		intake.move(127);
 		base.smoothDriveToPoint(base.odom.pos.X - 24, base.odom.pos.Y - 15, 0.75);
-		base.fwds(8, 100, 70);
+		base.fwds(4, 100, 70);
 		//capFlip();
 		//--drive to hit low flag 2
 		intake.move(0);
 		base.fwds(-16, 300);
 		//base.turn(-120);
-		base.driveToPointTIME(-90, 36, 1000);
-		base.fwds(0, 0);
+		base.driveToPointTIME(-90, 45, 1000);
+		//base.fwds(0, 0);
 		delay(400);
 		FWVelGoal = 150;
-		base.driveToPointTIME(-63, 38, 2000, BACK);
+		base.driveToPointTIME(-60, 47, 2000, BACK);
 		base.turnTo(90+80, 300);
 		indexer.moveAmnt(600, 10);
 		FWVelGoal = 50;//low power
 		intake.move(127);
-		base.smoothDriveToPoint(base.odom.pos.X - 19, 98, 0.6);
+		base.smoothDriveToPointTIME(base.odom.pos.X+13, 100, 0.95, 3000);
 		delay(500);
 		base.fwds(-15, 100);
 		intake.move(0);
-		base.driveToPoint(base.odom.pos.X - 19, base.odom.pos.Y);
+		base.driveToPointTIME(-90, 100, 1500);
 		delay(300);
+		base.driveToPoint(-8, 97);
 		/*
 		base.fwds(-48, 300);
 		base.turnTo(90, 400);
@@ -293,8 +303,26 @@ public:
 		base.fwds(10, 200);//ram into flag
 		*/
 	//	base.fwds(-20, 400);//finish auton... for now.
+}
+void skillsPARK(){
+	base.fwds(-10, 100);
+	base.driveToPointTIME(20, -74, 3000, BACK);
+	base.turnTo(178.5, 800);
+	int t = 0;
+	while(t < 3000){
+		base.fwdsDrive(127);
+		t++;
+		delay(1);
 	}
-
+	t = 0;
+	while(t<50){
+		base.fwdsDrive(-127);
+		t++;
+		delay(1);
+	}
+	base.fwdsDrive(0);
+	return;
+}
 		std::vector<string> debugString(){
 			std::vector<string> ret;
 			//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));

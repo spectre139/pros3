@@ -15,7 +15,7 @@ void flywheelControl(void* param){//task test for flywheel PID
             r->FWVelGoal = 150;//150rpm for high/far flags}
           }
         else if(master.btnDOWN){
-            r->FWVelGoal = 115;//115rpm for medium/close flags
+            r->FWVelGoal = 90;//115rpm for medium/close flags
         }
         else if(master.btnA){
             r->FWVelGoal = 60;//60rpm for low power use
@@ -25,6 +25,8 @@ void flywheelControl(void* param){//task test for flywheel PID
         }
         r->flywheel.moveVel(r->FWVelGoal);
         delay(20);
+
+
     }
 }
 void updateSensor(void* param){//task test for flywheel PID
@@ -52,7 +54,6 @@ void updatePIDs(void* param){//task test for flywheel PID
     }
 }
 Robot rob = Robot();
-
 void opcontrol() {
     Task odometryCalculations(calculatePos, &rob.base.odom);
     Task controlFlywheel(flywheelControl, &rob);
@@ -69,7 +70,9 @@ void opcontrol() {
         //lcd::print(1, (string("EncoderL6: ") + std::to_string( encoderR.get_value())).c_str() );
         //lcd::print(2, (string("EncoderR6: ") + std::to_string( encoderL.get_value())).c_str() );
         //lcd::print(3, (string("EncoderM6: ") + std::to_string( encoderM.get_value())).c_str() );
-        rob.intake.simpleControl(master.btnL1, master.btnL2);
+
+
+        rob.intake.toggeru(master.btnL2);
         rob.indexer.simpleControl(master.btnR1, master.btnR2);
         if(rob.FWVelGoal == 0) {
             //only control the lift (same fw motres) when fw is off
@@ -77,7 +80,8 @@ void opcontrol() {
         }
         //if(master.btnUP) rob.testDriveFwds(15);
         //if(master.btnDOWN) rob.testRotation(90);
-        if(master.btnX) rob.skills();//base.smoothDriveToPoint(10, 20, 0.5);
+        if(master.btnX) rob.skillsPARK();//base.smoothDriveToPoint(10, 20, 0.5);
+        if(master.btnY) rob.base.fwdsAng(16.5, 400, rob.base.odom.pos.heading);
         //if(master.btnLEFT) rob.testMacro(115, 150);
         /*once all tests are done to satisfaction:
         if(master.btnUP) rob.part1();

@@ -80,7 +80,7 @@ void opcontrol() {
         }
         //if(master.btnUP) rob.testDriveFwds(15);
         //if(master.btnDOWN) rob.testRotation(90);
-        if(master.btnX) rob.skills();//base.smoothDriveToPoint(10, 20, 0.5);
+        if(master.btnX) rob.skillsPARK();//base.smoothDriveToPoint(10, 20, 0.5);
         if(master.btnY) rob.base.fwdsAng(16.5, 400, rob.base.odom.pos.heading);
         //if(master.btnLEFT) rob.testMacro(115, 150);
         /*once all tests are done to satisfaction:
