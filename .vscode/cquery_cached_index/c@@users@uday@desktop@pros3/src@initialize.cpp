@@ -34,8 +34,8 @@ void initMotors(){//i wonder... do i even need this?
     Motor RFrontBase_initializer (motorRFront_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
     Motor RRearBase_initializer (motorRRear_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
     //flywheel
-    Motor flywheel1_initializer (flywheel1_port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor flywheel2_initializer (flywheel2_port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+    Motor flywheel1_initializer (1, E_MOTOR_GEARSET_06);
+    Motor flywheel2_initializer (2, E_MOTOR_GEARSET_06);
     //indexer
     Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
     Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);

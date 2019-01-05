@@ -22,8 +22,8 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define flywheel1_port   3
-#define flywheel2_port   4
+#define flywheel1_port   1
+#define flywheel2_port   2
 
 #define intake_Port      19
 #define indexer_Port     5
@@ -38,13 +38,14 @@ using pros::Motor, pros::ADIEncoder, std::string;
 using namespace pros;
 
 ADIEncoder FWenc (7, 8, false);
+ADIPotentiometer pot (2);
 class Robot{
 public:
 	//CONSTRUCTOR:
 	Robot() :
     //mechanisms
     flywheel(
-		{Motor(flywheel1_port), Motor(flywheel2_port)}, //motors
+		{Motor(flywheel1_port, E_MOTOR_GEARSET_06), Motor(flywheel2_port, E_MOTOR_GEARSET_06)}, //motors
 		{FWenc}, //encoder
 		PIDcontroller(1.5, 0.0, 0.0, 1.50, 10, false, true)//PID
 	),
@@ -64,7 +65,8 @@ public:
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
     base(//motors
-		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
+		{ Motor(4), Motor(5), Motor(6), Motor (7),Motor (8), Motor (9),},
+
 		//drive PID, then angle PID, then curve
 		{ PIDcontroller(9.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
 		//Odometry
@@ -115,14 +117,15 @@ public:
 			intake.move(-127);
 			//base.fwds(7);
 			base.fwds(-3, 10);
-			delay(350);
+			delay(550);
 			intake.move(127);
 			base.fwds(11, 50, 80);
+			delay(100);
 		}
 		void capFlipNoIntake(){
 			intake.move(127);
 			delay(350);
-			base.fwds(8, 50, 80);
+			base.fwds(10, 50, 80);
 		}
 
 		//actual skills runs
@@ -145,6 +148,82 @@ public:
 		o->pos.Y = 0;
 		o->pos.heading = 90;
 	}
+
+
+
+
+
+
+
+	void intro(){
+		resetOdom(&base.odom);
+		//--reset odom? sometimes works... usually dosent... smh
+		base.odom.pos.X = 0;
+		base.odom.pos.Y = 0;
+		//--get ball under cap
+		intake.move(-90);//intake preload
+		FWVelGoal = 60;//low power flywheel
+		base.driveToPoint(base.odom.pos.X, 37);//drive fwds
+		//--flip cap
+		capFlip();
+		int t = 0;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 90)) * 5);
+			delay(1);
+			t++;
+		}
+		base.driveToPoint(0, 4, BACK);//fwds(-43, 400);
+		//indexer.moveAmnt(600, 10);//primes the balls
+		base.turn(90.7, 400);
+		indexer.moveAmnt(-200, 10);
+		//--start driving to nearest flags
+		intake.move(0);
+		FWVelGoal = 150;
+		indexer.moveAmnt(300, 10);//primes the balls
+		//base.smoothDriveToPoint(-69, 6, 0.7);
+		base.fwdsAng(62, 400, 180.3);//, 0.5);
+		//base.turnTo(175);
+		//--time basedd self correction for angle (idk if needed)
+		t = 0;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 179.5)) * 5);
+			delay(1);
+			t++;
+		}
+		//base.turnTo(180, 500);
+		//--first ball (high flag)
+		indexer.moveAmnt(170, 10);
+		FWVelGoal = 170;
+		//indexer.moveTime(300, 60);
+		//--turn to get second ball (medium flag needs special angle)
+	//	base.turn(8, 100);//turn to hit low flag//NEEDS PID
+		delay(300);
+		int t2 = 0;
+		while(t2<500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 171)) * 6);
+			t2++;
+			delay(1);
+		}
+		base.fwdsAng(16.5, 400, base.odom.pos.heading);//drive closer to flag to hit
+		indexer.moveAmnt(350, 20);//shoot ball
+		base.fwds(-8, 300);
+		delay(500);
+		//base.fwds(-10, 100);
+		//--time to get the first low flag
+		//----first turn to get a smooth curve to ram the low flag
+		base.turn(20, 300);
+		intake.move(20);
+
+
+return;
+}
+
+
+
+
+
+
+
 	void skills(){
 		resetOdom(&base.odom);
 		//--reset odom? sometimes works... usually dosent... smh
@@ -216,21 +295,29 @@ public:
 		}*/
 
 		delay(500);
-		base.driveToPoint(-47, base.odom.pos.Y, BACK);
-		base.turnToKP(91.5, 1.5, 900);//reset position. can probs ram against fence idk.
+		int t3 = 0;
+		while(t3<500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 180)) * 8);
+			t3++;
+			delay(1);
+		}
+		base.driveToPointTIME(-54, 5, 2000, BACK);
+		base.fwds(0, 0);
+		delay(500);
+		base.turnToKP(90, 1.5, 1500);//reset position. can probs ram against fence idk.
 		delay(200);
 		intake.move(-60);//intake preload
 		FWVelGoal = 60;//low power flywheel
-		base.fwds(37, 200);//, 200);//drive fwds
+		base.fwds(40, 200);//, 200);//drive fwds
 
 		//--flip cap
 		capFlip();
-		base.fwds(-8, 200);
+		base.fwds(-11.5, 200);
 		//base.fwds(10, 100);
 		base.turn(90, 400);//aim at the flags
 		//hit high flag
 		t = 0;
-		while(t < 300){
+		while(t < 400){
 			base.fwdsDrive(-80);
 			delay(1);
 			t++;
@@ -238,27 +325,28 @@ public:
 		//resetOdom(&base.odom);
 		intake.move(127);
 		base.smoothDriveToPoint(base.odom.pos.X - 24, base.odom.pos.Y - 15, 0.75);
-		base.fwds(8, 100, 70);
+		base.fwds(4, 100, 70);
 		//capFlip();
 		//--drive to hit low flag 2
 		intake.move(0);
 		base.fwds(-16, 300);
 		//base.turn(-120);
-		base.driveToPointTIME(-90, 36, 1000);
-		base.fwds(0, 0);
+		base.driveToPointTIME(-90, 45, 1000);
+		//base.fwds(0, 0);
 		delay(400);
 		FWVelGoal = 150;
-		base.driveToPointTIME(-63, 38, 2000, BACK);
+		base.driveToPointTIME(-60, 47, 2000, BACK);
 		base.turnTo(90+80, 300);
 		indexer.moveAmnt(600, 10);
 		FWVelGoal = 50;//low power
 		intake.move(127);
-		base.smoothDriveToPoint(base.odom.pos.X - 19, 98, 0.6);
+		base.smoothDriveToPointTIME(base.odom.pos.X+13, 100, 0.95, 3000);
 		delay(500);
 		base.fwds(-15, 100);
 		intake.move(0);
-		base.driveToPoint(base.odom.pos.X - 19, base.odom.pos.Y);
+		base.driveToPointTIME(-90, 100, 1500);
 		delay(300);
+		base.driveToPoint(-8, 97);
 		/*
 		base.fwds(-48, 300);
 		base.turnTo(90, 400);
@@ -293,8 +381,26 @@ public:
 		base.fwds(10, 200);//ram into flag
 		*/
 	//	base.fwds(-20, 400);//finish auton... for now.
+}
+void skillsPARK(){
+	base.fwds(-10, 100);
+	base.driveToPointTIME(20, -74, 3000, BACK);
+	base.turnTo(178.5, 800);
+	int t = 0;
+	while(t < 3000){
+		base.fwdsDrive(127);
+		t++;
+		delay(1);
 	}
-
+	t = 0;
+	while(t<50){
+		base.fwdsDrive(-127);
+		t++;
+		delay(1);
+	}
+	base.fwdsDrive(0);
+	return;
+}
 		std::vector<string> debugString(){
 			std::vector<string> ret;
 			//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));

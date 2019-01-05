@@ -22,8 +22,8 @@ using pros::Motor, pros::ADIEncoder, std::string;
 #define encoderFlywheelBott 8
 
 //defining motor ports:
-#define flywheel1_port   3
-#define flywheel2_port   4
+#define flywheel1_port   1
+#define flywheel2_port   2
 
 #define intake_Port      19
 #define indexer_Port     5
@@ -38,13 +38,14 @@ using pros::Motor, pros::ADIEncoder, std::string;
 using namespace pros;
 
 ADIEncoder FWenc (7, 8, false);
+ADIPotentiometer pot (2);
 class Robot{
 public:
 	//CONSTRUCTOR:
 	Robot() :
     //mechanisms
     flywheel(
-		{Motor(flywheel1_port), Motor(flywheel2_port)}, //motors
+		{Motor(flywheel1_port, E_MOTOR_GEARSET_06), Motor(flywheel2_port, E_MOTOR_GEARSET_06)}, //motors
 		{FWenc}, //encoder
 		PIDcontroller(1.5, 0.0, 0.0, 1.50, 10, false, true)//PID
 	),
@@ -64,7 +65,8 @@ public:
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
     base(//motors
-		{ Motor(motorRFront_Port), Motor(motorRRear_Port), Motor(motorLFront_Port), Motor (motorLRear_Port) },
+		{ Motor(4), Motor(5), Motor(6), Motor (7),Motor (8), Motor (9),},
+
 		//drive PID, then angle PID, then curve
 		{ PIDcontroller(9.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
 		//Odometry
@@ -146,6 +148,82 @@ public:
 		o->pos.Y = 0;
 		o->pos.heading = 90;
 	}
+
+
+
+
+
+
+
+	void intro(){
+		resetOdom(&base.odom);
+		//--reset odom? sometimes works... usually dosent... smh
+		base.odom.pos.X = 0;
+		base.odom.pos.Y = 0;
+		//--get ball under cap
+		intake.move(-90);//intake preload
+		FWVelGoal = 60;//low power flywheel
+		base.driveToPoint(base.odom.pos.X, 37);//drive fwds
+		//--flip cap
+		capFlip();
+		int t = 0;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 90)) * 5);
+			delay(1);
+			t++;
+		}
+		base.driveToPoint(0, 4, BACK);//fwds(-43, 400);
+		//indexer.moveAmnt(600, 10);//primes the balls
+		base.turn(90.7, 400);
+		indexer.moveAmnt(-200, 10);
+		//--start driving to nearest flags
+		intake.move(0);
+		FWVelGoal = 150;
+		indexer.moveAmnt(300, 10);//primes the balls
+		//base.smoothDriveToPoint(-69, 6, 0.7);
+		base.fwdsAng(62, 400, 180.3);//, 0.5);
+		//base.turnTo(175);
+		//--time basedd self correction for angle (idk if needed)
+		t = 0;
+		while(t < 500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 179.5)) * 5);
+			delay(1);
+			t++;
+		}
+		//base.turnTo(180, 500);
+		//--first ball (high flag)
+		indexer.moveAmnt(170, 10);
+		FWVelGoal = 170;
+		//indexer.moveTime(300, 60);
+		//--turn to get second ball (medium flag needs special angle)
+	//	base.turn(8, 100);//turn to hit low flag//NEEDS PID
+		delay(300);
+		int t2 = 0;
+		while(t2<500){
+			base.pointTurn(-sign(normAngle(base.odom.pos.heading - 171)) * 6);
+			t2++;
+			delay(1);
+		}
+		base.fwdsAng(16.5, 400, base.odom.pos.heading);//drive closer to flag to hit
+		indexer.moveAmnt(350, 20);//shoot ball
+		base.fwds(-8, 300);
+		delay(500);
+		//base.fwds(-10, 100);
+		//--time to get the first low flag
+		//----first turn to get a smooth curve to ram the low flag
+		base.turn(20, 300);
+		intake.move(20);
+
+
+return;
+}
+
+
+
+
+
+
+
 	void skills(){
 		resetOdom(&base.odom);
 		//--reset odom? sometimes works... usually dosent... smh
