@@ -60,10 +60,12 @@ void opcontrol() {
   ADIPotentiometer lim (1);
   ADIPotentiometer pot (2);
   ADIEncoder enco (1, 2, false);
+  pros::Vision vis (20);
+  vis.clear_led();
+  vision_object_s_t BLU = vis.get_by_sig(0, 1);
   Task sensorUpdates(updateSensor, &rob);
   Task odometryCalculations(calculatePosBASE, &rob.base.odom);
   rob.base.odom.resetEncoders = true;
-
   while (true) {
     LeftBAvg = avg(rob.base.mots[1].get_position(), rob.base.mots[1].get_position());//1, 2
     RightBAvg = avg(rob.base.mots[2].get_position(), rob.base.mots[2].get_position());//0, 3

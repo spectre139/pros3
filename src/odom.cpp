@@ -3,7 +3,6 @@
 #include "lowLevel.h"
 #include "robot.h"
 
-
 extern pros::ADIEncoder encoderL, encoderR, encoderM;
 
 using namespace pros;
