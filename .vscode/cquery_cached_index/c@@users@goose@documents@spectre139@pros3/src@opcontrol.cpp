@@ -67,8 +67,8 @@ void opcontrol() {
   Task odometryCalculations(calculatePosBASE, &rob.base.odom);
   rob.base.odom.resetEncoders = true;
   while (true) {
-    LeftBAvg = avg(rob.base.mots[1].get_position(), rob.base.mots[1].get_position());//1, 2
-    RightBAvg = avg(rob.base.mots[2].get_position(), rob.base.mots[2].get_position());//0, 3
+    LeftBAvg = avg(rob.base.mots[1].get_position(), rob.base.mots[2].get_position());//1, 2
+    RightBAvg = -avg(rob.base.mots[0].get_position(), rob.base.mots[3].get_position());//0, 3
     if(brake == 1) rob.base.driveLR(master.rightY, master.leftY);
     else rob.base.brakeHecka(pot.get_value());
 

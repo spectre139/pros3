@@ -231,9 +231,14 @@ class chassis{
     public://functions
     float driveVel = 0, rotVel = 0;
     class Odometry odom;
+    float yeet(float t){
+      float power = 2;
+      if(sign(t) > 0) return pow(t, power) / pow(127.0, power - 1.0);
+      return -pow(t, power) / pow(127.0, power - 1.0);
+    }
     void driveLRDEAD(int powerR, int powerL){//low level
-      powerL = clamp(127, -127, powerL);
-      powerR = clamp(127, -127, powerR);
+      powerL = clamp(127, -127, (powerL));
+      powerR = clamp(127, -127, (powerR));
       mots[0].move(-powerR); // port 4 right
       mots[1].move(powerL);//port 5 left
       mots[2].move(powerL); //port 6 left
@@ -245,14 +250,14 @@ class chassis{
       return ((potVal - potReq));
     }
     void driveLR(int powerR, int powerL){//low level
-      powerL = clamp(127, -127, powerL);
-      powerR = clamp(127, -127, powerR);
+      powerL = clamp(127, -127, yeet(powerL));
+      powerR = clamp(127, -127, yeet(powerR));
       mots[0].move(-powerR); // port 4 right
       mots[1].move(powerL);//port 5 left
       mots[2].move(powerL); //port 6 left
       mots[3].move(-powerR);//port 7  right
       mots[4].move(powerL);//port 8 diff left
-      mots[5].move(powerR);//port 9 diff right
+      mots[5].move(-powerR);//port 9 diff right
     }
     void brakeHecka(int potVal){//low level
       mots[0].move_velocity(0); // port 4 right

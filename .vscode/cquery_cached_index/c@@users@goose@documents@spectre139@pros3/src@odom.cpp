@@ -23,7 +23,6 @@ using namespace pros;
 void calculatePosBASE(void* param){
   static ADIEncoder encM (1, 2, false);
   class Odometry* Odom = (Odometry*) param;
-    lcd::initialize();
     for(;;){
       if(!Odom->resetEncoders){
         float dR = encoderDistInchBASE( LeftBAvg )  - Odom->lastR;//change in right encoder
