@@ -33,7 +33,7 @@ class Odometry {
   }//init constructor defaulted
   Position pos, t_pos;
   volatile bool resetEncoders = false;
-  const float wheelWidth = 13;//(8.75+1.25*2)*1.09;//distance betweenn L&Rtrackers on base (inch)
+  const float wheelWidth = 7;//(8.75+1.25*2)*1.09;//distance betweenn L&Rtrackers on base (inch)
   float lastL = 0, lastR = 0, lastM = 0, resetAngleSentinel = -PI;
 };
 

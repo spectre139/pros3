@@ -55,11 +55,11 @@ void autonomous(){
 }
 
 float LeftBAvg, RightBAvg;
-
+float encM, encL, encR;
 void opcontrol() {
   ADIPotentiometer lim (1);
   ADIPotentiometer pot (2);
-  ADIEncoder enco (1, 2, false);
+  ADIEncoder encMo (1, 2, false), encRo (3, 4, false), encLo (5, 6, false);
   pros::Vision vis (20);
   vis.clear_led();
   vision_object_s_t BLU = vis.get_by_sig(0, 1);
@@ -69,6 +69,12 @@ void opcontrol() {
   while (true) {
     LeftBAvg = avg(rob.base.mots[1].get_position(), rob.base.mots[2].get_position());//1, 2
     RightBAvg = -avg(rob.base.mots[0].get_position(), rob.base.mots[3].get_position());//0, 3
+    encM = encMo.get_value();
+    encL = encLo.get_value();
+    encR = -encRo.get_value();
+    if(rob.base.odom.resetEncoders) {
+      encMo.reset();  encLo.reset(); encRo.reset();
+    }
     if(brake == 1) rob.base.driveLR(master.rightY, master.leftY);
     else rob.base.brakeHecka(pot.get_value());
 
@@ -79,9 +85,9 @@ void opcontrol() {
     lcd::print(0, (string("Pos X: ") + std::to_string( rob.base.odom.pos.X)).c_str());
     lcd::print(1, (string("Pos Y: ") + std::to_string( rob.base.odom.pos.Y)).c_str());
     lcd::print(2, (string("Theta: ") + std::to_string( rob.base.odom.pos.heading)).c_str());
-    lcd::print(3, (string("BLEnc: ") + std::to_string( LeftBAvg )).c_str());
-    lcd::print(4, (string("BREnc: ") + std::to_string( RightBAvg )).c_str());
-    lcd::print(5, (string("MEnc : ") + std::to_string( enco.get_value() )).c_str());
+    lcd::print(3, (string("LEnc: ") + std::to_string( encL )).c_str());
+    lcd::print(4, (string("REnc: ") + std::to_string( encR )).c_str());
+    lcd::print(5, (string("MEnc : ") + std::to_string( encM )).c_str());
     delay(2);
   }
 }
