@@ -8,7 +8,7 @@
 #define ON true
 #define OFF false
 
-const float PI = 3.14159265359;
+const float PI = 3.1415;
 
 inline int sign(int num) {
 	if (num < 0) return -1;
@@ -51,7 +51,13 @@ inline float boundAngle(float radians) {//keeps radians within -PI to +PI
 	return radians;
 }
 inline float encoderDistInch(int rawSensor){
-	const float wheelDiam = 3.232;
+	const float wheelDiam = 2.75;
+	const int countsPerRev = 360;
+	const int gearRatio = 1;//1 to 1
+	return (rawSensor * PI * wheelDiam) / (countsPerRev * gearRatio);
+}
+inline float encoderDistInchBASE(int rawSensor){
+	const float wheelDiam = 4.140;//base wheels
 	const int countsPerRev = 360;
 	const int gearRatio = 1;//1 to 1
 	return (rawSensor * PI * wheelDiam) / (countsPerRev * gearRatio);
@@ -64,22 +70,22 @@ inline bool isWithinAngleBounds(const float current, const float goal, const flo
 }
 
 //easy button shortcuts
-#define btnL1 get_digital(E_CONTROLLER_DIGITAL_L1)
-#define btnL2 get_digital(E_CONTROLLER_DIGITAL_L2)
-#define btnR1 get_digital(E_CONTROLLER_DIGITAL_R1)
-#define btnR2 get_digital(E_CONTROLLER_DIGITAL_R2)
-#define btnA get_digital(E_CONTROLLER_DIGITAL_A)
-#define btnB get_digital(E_CONTROLLER_DIGITAL_B)
-#define btnX get_digital(E_CONTROLLER_DIGITAL_X)
-#define btnY get_digital(E_CONTROLLER_DIGITAL_Y)
-#define btnUP get_digital(E_CONTROLLER_DIGITAL_UP)
-#define btnDOWN get_digital(E_CONTROLLER_DIGITAL_DOWN)
-#define btnLEFT get_digital(E_CONTROLLER_DIGITAL_LEFT)
-#define btnRIGHT get_digital(E_CONTROLLER_DIGITAL_RIGHT)
+#define btnL1        get_digital(E_CONTROLLER_DIGITAL_L1)
+#define btnL2        get_digital(E_CONTROLLER_DIGITAL_L2)
+#define btnR1        get_digital(E_CONTROLLER_DIGITAL_R1)
+#define btnR2        get_digital(E_CONTROLLER_DIGITAL_R2)
+#define btnA         get_digital(E_CONTROLLER_DIGITAL_A)
+#define btnB         get_digital(E_CONTROLLER_DIGITAL_B)
+#define btnX         get_digital(E_CONTROLLER_DIGITAL_X)
+#define btnY         get_digital(E_CONTROLLER_DIGITAL_Y)
+#define btnUP        get_digital(E_CONTROLLER_DIGITAL_UP)
+#define btnDOWN      get_digital(E_CONTROLLER_DIGITAL_DOWN)
+#define btnLEFT      get_digital(E_CONTROLLER_DIGITAL_LEFT)
+#define btnRIGHT     get_digital(E_CONTROLLER_DIGITAL_RIGHT)
 //analog sticks
-#define leftY get_analog(E_CONTROLLER_ANALOG_LEFT_Y)
-#define leftX get_analog(E_CONTROLLER_ANALOG_LEFT_X)
-#define rightY get_analog(E_CONTROLLER_ANALOG_RIGHT_Y)
-#define rightX get_analog(E_CONTROLLER_ANALOG_RIGHT_X)
+#define leftY        get_analog(E_CONTROLLER_ANALOG_LEFT_Y)
+#define leftX        get_analog(E_CONTROLLER_ANALOG_LEFT_X)
+#define rightY       get_analog(E_CONTROLLER_ANALOG_RIGHT_Y)
+#define rightX       get_analog(E_CONTROLLER_ANALOG_RIGHT_X)
 
 #endif

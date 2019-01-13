@@ -4,41 +4,27 @@
 using namespace pros;
 
 #define reversed true
-#define encoderLTop_Port  1
-#define encoderLBott_Port 2
 
-#define encoderRTop_Port  3
-#define encoderRBott_Port 4
 
-#define encoderMTop_Port  5
-#define encoderMBott_Port 6
+#define RFront   	4
+#define LFront    5
+#define LBack     6
+#define RBack     7
+#define LDiff     8
+#define RDiff     9
 
-#define encoderFlywheelTop  7
-#define encoderFlywheelBott 8
+#define LeftBAvg avg(Motor(LFront).get_position(), Motor(LBack).get_position())
+#define RightBAvg avg(Motor(RFront).get_position(), Motor(RBack).get_position())
 
-//defining motor ports:
-#define flywheel1_port   3
-#define flywheel2_port   4
 
-#define intake_Port      19
-#define indexer_Port     5
-
-#define motorLFront_Port 7
-#define motorLRear_Port  8
-#define motorRFront_Port 9
-#define motorRRear_Port  20
-
-void initMotors(){//i wonder... do i even need this?
-    Motor LFrontBase_initializer (motorLFront_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor LRearBase_initializer (motorLRear_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor RFrontBase_initializer (motorRFront_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor RRearBase_initializer (motorRRear_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-    //flywheel
-    Motor flywheel1_initializer (flywheel1_port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor flywheel2_initializer (flywheel2_port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-    //indexer
-    Motor indexer_initializer (indexer_Port, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
-    Motor intake_initializer (intake_Port, E_MOTOR_GEARSET_18, reversed, E_MOTOR_ENCODER_DEGREES);
+void initMotors(){
+  Motor RFrontMot_init (RFront, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  Motor LFrontMot_init (LFront, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  Motor LBackMot_init  (LBack, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  Motor RBackMot_init  (RBack, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  Motor LDiffMot_init  (LDiff, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  Motor RDiffMot_init  (RDiff, E_MOTOR_GEARSET_18, !reversed, E_MOTOR_ENCODER_DEGREES);
+  //USE E_MOTOR_GEARSET_06 for the 600rpm mots
 }
 void initialize() {
     lcd::initialize();

@@ -152,6 +152,7 @@ public:
     std::vector<pros::Motor> mots;
     std::vector<pros::ADIEncoder> encs;
     float lastVel = 0;
+  int upDog = 0;
 public://functions
     class PIDcontroller pid;
     float velocity = 0;
@@ -177,6 +178,7 @@ public://functions
             m.move(power);
         }
     }
+
     void moveVel(float vel){
         setPIDState(OFF);
         for(const pros::Motor& m : mots){//for each motor in mots
@@ -192,6 +194,49 @@ public://functions
     void simpleControl(int buttonUp, int buttonDown, int power = 127){
         move(buttonUp*power - buttonDown*power);//simple up down control with 2 buttons (perf for indexer)
     }
+void skrrt(int vel){
+  mots[0].move_velocity(vel);
+  mots[1].move_velocity(-vel);
+
+}
+void skrrt2(int vel){
+mots[0].move_velocity(vel);
+mots[1].move(127);
+}
+void no(){
+move(0);
+
+}
+void no2(){
+  mots[0].move(0);
+  mots[1].move(75);
+
+}
+    int toggeru(int urMother){ // ask me what upDog is - Uday
+      if(urMother == 1){
+
+      if(upDog == 2){
+        move(127);
+        upDog = 0;
+        delay(300);
+        return 1;
+
+      }
+      if(upDog == 1){
+        move(-127);
+        upDog++;
+        delay(300);
+        return 1;
+      }
+if(upDog == 0){
+  move(0);
+upDog++;
+delay(300);
+return 1;
+}
+
+}
+}
     void moveAmnt(float amnt, float thresh, float power = 127){//simple encoder move
         float starting = getSensorVal();
         moveTo(starting + amnt, thresh, power);//moves to the position with AMNT as a constant quantity
@@ -246,10 +291,113 @@ public://functions
         void driveLR(int powerR, int powerL){//low level
             powerL = clamp(127, -127, powerL);
             powerR = clamp(127, -127, powerR);
-            mots[0].move(powerR);
-            mots[1].move(powerR);
-            mots[2].move(powerL);
-            mots[3].move(powerL);
+            mots[0].move(-powerR); // port 4 right
+            mots[1].move(powerL);//port 5 left
+            mots[2].move(powerL); //port 6 left
+            mots[3].move(-powerR);//port 7  right
+            mots[4].move_velocity((mots[1].get_actual_velocity()));//port 8 diff left
+            mots[5].move_velocity((-(mots[0].get_actual_velocity())));//port 9 diff right
+        }
+        int thing(int potVal, int potReq){
+
+          return ((potVal - potReq));
+        }
+        void driveLRPOT(int powerR, int powerL, int potVal, int potReq, int lim){//low level
+            powerL = clamp(127, -127, powerL);
+            powerR = clamp(127, -127, powerR);
+
+          //  if(lim == 10){
+              mots[0].move(-powerR); // port 4 right
+              mots[1].move(powerL);//port 5 left
+              mots[2].move(powerL); //port 6 left
+              mots[3].move(-powerR);//port 7  right
+              mots[4].move(powerL);//port 8 diff left
+              mots[5].move(powerR);//port 9 diff right
+          /**  }
+            else if(lim == 39){
+              if(powerR > 0){
+                mots[0].move(-powerR); // port 4 right
+                mots[3].move(-powerR );//port 7  right
+                mots[5].move(powerR - 50);
+
+              }
+              else if(powerR < 0){
+                mots[0].move(-powerR + 50); // port 4 right
+                mots[3].move(-powerR +50);//port 7  right
+                mots[5].move(powerR);
+
+              }else{
+                mots[0].move_velocity(0); // port 4 right
+                mots[3].move_velocity(0);//port 7  right
+                mots[5].move(-50);
+              }
+
+            if (powerL >  0){
+                mots[1].move(powerL);//port 5 left
+                mots[2].move(powerL); //port 6 left
+                mots[4].move(powerL - 50);
+              }
+              else if (powerL < 0){
+                mots[1].move(powerL + 50);//port 5 left
+                mots[2].move(powerL + 50); //port 6 left
+                mots[4].move(powerL);
+
+              }
+              else{
+                mots[1].move(0); // port 4 right
+                mots[2].move(0);//port 7  right
+                mots[4].move(-50);
+              }**/
+
+
+            }
+
+/**
+            if(powerR > 0){
+              mots[0].move(-powerR); // port 4 right
+              mots[3].move(-powerR );//port 7  right
+              mots[5].move(powerR - 0.1*thing(potVal, potReq));
+
+            }
+            else if(powerR < 0){
+              mots[0].move(-powerR - 0.1*thing(potVal, potReq)); // port 4 right
+              mots[3].move(-powerR - 0.1*thing(potVal, potReq));//port 7  right
+              mots[5].move(powerR);
+
+            }else{
+              mots[0].move_velocity(0); // port 4 right
+              mots[3].move_velocity(0);//port 7  right
+              mots[5].move(-0.25*thing(potVal, potReq));
+            }
+
+          if (powerL >  0){
+              mots[1].move(powerL);//port 5 left
+              mots[2].move(powerL); //port 6 left
+              mots[4].move(powerL - 0.1*thing(potVal, potReq));
+            }
+            else if (powerL < 0){
+              mots[1].move(powerL + 0.1*thing(potVal, potReq));//port 5 left
+              mots[2].move(powerL + 0.1*thing(potVal, potReq)); //port 6 left
+              mots[4].move(powerL);
+
+            }
+            else{
+              mots[1].move_velocity(0); // port 4 right
+              mots[2].move_velocity(0);//port 7  right
+              mots[4].move(-0.25*thing(potVal, potReq));
+            }
+            **/
+
+        void brakeHecka(int potVal){//low level
+            mots[0].move_velocity(0); // port 4 right
+            mots[1].move_velocity(0);//port 5 left
+            mots[2].move_velocity(0); //port 6 left
+            mots[3].move_velocity(0);//port 7  right
+        /**    mots[4].move(-3*thing( 2450, potVal));//port 8 diff left
+            mots[5].move(-3*thing( 2450,potVal));//port 9 diff right
+**/
+mots[4].move(80);//port 8 diff left
+    mots[5].move(80);//port 9 diff right
         }
         void fwdsDrive(int power){//BASE
             driveLR(power, power);
