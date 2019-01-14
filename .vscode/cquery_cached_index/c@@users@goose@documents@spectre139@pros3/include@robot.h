@@ -43,9 +43,10 @@ public:
 	),
 	base(//motors
 		{ Motor(RFront), Motor(LFront), Motor(LBack), Motor(RBack), Motor(LDiff), Motor(RDiff) },
-
 		//drive PID, then angle PID, then curve
-		{ PIDcontroller(9.5, 0.0, 0.0, 1.75, 10, true, false), PIDcontroller(1.75, 0.0, 0.0, 2.0,  10, true, false), PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
+		{ PIDcontroller(12, 0.0, 0.05, 1.75, 10, true, false),
+			PIDcontroller(3.5, 0.0, 0.5, 2.0,  10, false, false),
+			PIDcontroller(2.5, 0.0, 0.0, 1.0,  10, false, false) },
 		//Odometry
 		Odometry(Position(0, 0, 0), Position(0, 0, 0)//,//actual position, tracker mech's position
 		//Odom Sensors:
@@ -65,13 +66,6 @@ void indexerAdvance(int amntTicks = 100){//bring indexer ball up once (given num
 	indexer.moveAmnt(amntTicks, 10);
 }
 //tests
-void testDriveFwds(float numInches){
-	base.fwds(numInches, 400);
-}
-
-void testRotation(float degrees){
-	base.turn(degrees);
-}
 
 void testMacro(float power = 60){//has flywheel running and stuff
 	int t = 1;
@@ -91,7 +85,7 @@ void testMacro(float power = 60){//has flywheel running and stuff
 	FWVelGoal = 0;*/
 	return;
 }
-
+/*
 void capFlip(){
 	intake.move(-127);
 	//base.fwds(7);
@@ -192,6 +186,7 @@ void intro(){
 
 	return;
 }
+*
 
 void skills(){
 	resetOdom(&base.odom);
@@ -261,7 +256,7 @@ void skills(){
 	base.fwdsDrive(100);
 	t++;
 	delay(1);
-	}*/
+	}*
 
 	delay(500);
 	int t3 = 0;
@@ -321,7 +316,7 @@ void skills(){
 	base.turnTo(90, 400);
 	base.fwds(13, 300);
 	base.turnTo(0, 400);
-	base.fwds(48, 400);*/
+	base.fwds(48, 400);*
 	return;
 
 
@@ -348,7 +343,7 @@ void skills(){
 	FWVelGoal = 0;//turn off flywheel
 	base.turn(10, 500);//turn to get sharper nice angle
 	base.fwds(10, 200);//ram into flag
-	*/
+	*
 	//	base.fwds(-20, 400);//finish auton... for now.
 	}
 
@@ -371,7 +366,7 @@ void skillsPARK(){
 	base.fwdsDrive(0);
 	return;
 }
-
+*/
 std::vector<string> debugString(){
 	std::vector<string> ret;
 	//ret.push_back(string("BATTERY percent:") + std::to_string( pros::battery::get_capacity()));

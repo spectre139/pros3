@@ -329,8 +329,130 @@ class chassis{
       pointTurn(0);
       pid[ANGLE].isRunning = false;
     }
+    void turnTo(const float degrees, const int timeThresh = 400){//assumed CW is true
+      float oldKP = pid[ANGLE].kP;
+      pid[ANGLE].goal = degrees;
+      pid[ANGLE].isRunning = true;//TURN ON PID
+      //pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+      pid[ANGLE].kP = clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
+      while(abs(odom.pos.heading - pid[ANGLE].goal) > pid[ANGLE].thresh /*&& abs(rotVel) < 5*/){//waits for low velocity and close enoughness
+        pointTurn(pid[ANGLE].compute(odom.pos.heading, true));
+        delay(10);
+      }
+      int t = 0;
+      while(t < timeThresh){
+        pointTurn(pid[ANGLE].compute(odom.pos.heading, true));
+        delay(1);
+        t++;
+      }
+      pid[ANGLE].isRunning = false;//TURN OFF PID
+      pid[ANGLE].kP = oldKP;
+
+      pointTurn(0);
+      return;
+    }
+    void turnToTIME(const float degrees, const int timeThresh ){//assumed CW is true
+      float oldKP = pid[ANGLE].kP;
+      pid[ANGLE].goal = degrees;
+      pid[ANGLE].isRunning = true;//TURN ON PID
+      //pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+      pid[ANGLE].kP = clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
+      int t = 0;
+      while(t < timeThresh){
+        pointTurn(pid[ANGLE].compute(odom.pos.heading, true));
+        delay(1);
+        t++;
+      }
+      pid[ANGLE].isRunning = false;//TURN OFF PID
+      pid[ANGLE].kP = oldKP;
+      pointTurn(0);
+      return;
+    }
+    void turnToKP(const float degrees, const float newkP, const int timeThresh = 400){//assumed CW is true
+      float oldKP = pid[ANGLE].kP;
+      pid[ANGLE].goal = degrees;
+      pid[ANGLE].isRunning = true;//TURN ON PID
+      //pid[ANGLE].kP = limUpTo(15, 97.0449 * pow(abs(normAngle(degrees - robot.pos.heading)), -1.29993) + 0.993483);FANCY
+      pid[ANGLE].kP = newkP;//clamp(15, 0.2, 97 * pow(abs(normAngle(degrees - odom.pos.heading)), -1.3) + 1.4703);
+      int t = 0;
+      while(t < timeThresh){
+        pointTurn(pid[ANGLE].compute(odom.pos.heading, true));
+        delay(1);
+        t++;
+      }
+      pid[ANGLE].isRunning = false;//TURN OFF PID
+      pid[ANGLE].kP = oldKP;
+
+      pointTurn(0);
+      return;
+    }
     void turn(const float degrees, const int timeThresh = 400){
-    //  turnTo(normAngle(odom.pos.heading + degrees), timeThresh);//basically turns to the current + increment
+      turnTo(normAngle(odom.pos.heading + degrees), timeThresh);//basically turns to the current + increment
+      return;
+    }
+    void fwds(const float amnt, const int timeThresh, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+      const int initEncRight = encoderR.get_value();
+      const int initEncLeft = encoderL.get_value();
+      pid[DRIVE].goal = amnt;
+      pid[DRIVE].isRunning = true;//TURN ON PID
+      //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+      volatile float currentDist = 0.0;
+      while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+        currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+        fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+        delay(1);
+      }
+      int t = 0;
+      while(t < timeThresh){
+        currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+        fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+        delay(1);
+        t++;
+      }
+      pid[DRIVE].isRunning = false;
+
+      fwdsDrive(0);
+      return;
+    }
+    void fwdsTIME(const float amnt, const int timeThresh, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+      const int initEncRight = encoderR.get_value();
+      const int initEncLeft =  encoderR.get_value();
+      pid[DRIVE].goal = amnt;
+      pid[DRIVE].isRunning = true;//TURN ON PID
+      //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+      volatile float currentDist = 0.0;
+      int t = 0;
+      while(t < timeThresh){
+        currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+        fwdsDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)));
+        delay(1);
+        t++;
+      }
+      pid[DRIVE].isRunning = false;
+      fwdsDrive(0);
+      return;
+    }
+    void fwdsAng(const float amnt, const int timeThresh, const float angle, float cap = 127){//inches...ew //can TOTALLY use the odometry position vectors rather than encoders... smh
+      const int initEncRight = encoderR.get_value();
+      const int initEncLeft = encoderL.get_value();
+      pid[DRIVE].goal = amnt;
+      pid[DRIVE].isRunning = true;//TURN ON PID
+      //pid[DRIVE].kP = limUpTo(20, 28.0449 * pow(abs(amnt), -0.916209) + 2.05938);FANCY
+      volatile float currentDist = 0.0;
+      while(abs(currentDist - pid[DRIVE].goal) > pid[DRIVE].thresh){
+        currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+        smoothDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)), angle);
+        delay(1);
+      }
+      int t = 0;
+      while(t < timeThresh){
+        currentDist = avg(encoderDistInch(encoderL.get_value() - initEncLeft), encoderDistInch(encoderR.get_value()  - initEncRight));
+        smoothDrive(clamp(cap, -cap, pid[DRIVE].compute(currentDist)), angle);
+        delay(1);
+        t++;
+      }
+      pid[DRIVE].isRunning = false;
+      fwdsDrive(0);
       return;
     }
     void driveToPoint(float x, float y, bool isBackwards = false){
@@ -340,16 +462,33 @@ class chassis{
       //then compute distance to goal
       float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
       if(!isBackwards) {//normal turn to angle and drive
-        turnNEW(phi);//simple point turn
-        fwdsNEW(dist);//simple drive forwards
+        turnTo(phi, 400);//simple point turn
+        fwds(dist, 400);//simple drive forwards
       }
       else {//drive to point, but backwards, so back reaches the point first.
-        turnNEW(normAngle(phi + 180));//simple point turn (but backwards)
-        fwdsNEW(-dist);//simple drive forwards
+        turnTo(normAngle(phi + 180), 400);//simple point turn (but backwards)
+        fwds(-dist, 400);//simple drive forwards
       }
       return;
     }
-    /*void smoothDriveToPoint(float X, float Y, float sharpness, bool isBackwards = false){
+    void driveToPointTIME(float x, float y, float timeVar, bool isBackwards = false){
+      //first compute angle to goal
+      //also divide by 0 is fine bc atan2 has error handling
+      timeVar*=0.5;//only give half to each
+      float phi = normAngle(toDeg(atan2((y - odom.pos.Y), (x - odom.pos.X))));
+      //then compute distance to goal
+      float dist = sqrt(sqr(y - odom.pos.Y) + sqr(x - odom.pos.X));
+      if(!isBackwards) {//normal turn to angle and drive
+        turnToTIME(phi, timeVar);//simple point turn
+        fwdsTIME(dist, timeVar);//simple drive forwards
+      }
+      else {//drive to point, but backwards, so back reaches the point first.
+        turnToTIME(normAngle(phi + 180), timeVar);//simple point turn (but backwards)
+        fwdsTIME(-dist, timeVar);//simple drive forwards
+      }
+      return;
+    }
+    void smoothDriveToPoint(float X, float Y, float sharpness, bool isBackwards = false){
       class Position goal(X, Y, 0);
       float error = goal.distanceToPoint(odom.pos);
       pid[CURVE].goal = 0;//goal is to have no distance between goal and current
@@ -400,7 +539,7 @@ class chassis{
       pid[CURVE].isRunning = false;
       return;
   }
-*/
+
 };
 
 #endif
