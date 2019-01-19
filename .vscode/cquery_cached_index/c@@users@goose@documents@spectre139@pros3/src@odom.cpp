@@ -9,12 +9,13 @@ using namespace pros;
 
 #define SENTINEL (-PI)
 //defining motor ports:
-#define RFront   	4
-#define LFront    5
-#define LBack     6
-#define RBack     7
-#define LDiff     8
-#define RDiff     9
+#define RFront   	2
+#define LFront    14
+#define LBack     13
+#define RBack     12
+#define LDiff     1
+#define RDiff     11
+
 extern Robot rob;
 
 extern float LeftBAvg, RightBAvg;

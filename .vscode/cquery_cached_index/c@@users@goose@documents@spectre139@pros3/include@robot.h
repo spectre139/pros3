@@ -9,17 +9,28 @@
 
 using pros::Motor, pros::ADIEncoder, std::string;
 //defining motor ports:
-#define RFront   	4
-#define LFront    5
-#define LBack     6
-#define RBack     7
-#define LDiff     8
-#define RDiff     9
+#define RFront   	2
+#define LFront    14
+#define LBack     13
+#define RBack     12
+#define LDiff     1
+#define RDiff     11
 
 #define BACK true
 
 using namespace pros;
+/**
+lDiff 1
+frontRight 2
+rDiff 11
+backRight 12
+leftBack 13
+leftFront 14
+intake 15
+cata 16
+vision 17
 
+**/
 extern ADIPotentiometer pot;
 class Robot{
 public:
@@ -32,7 +43,7 @@ public:
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
 	intake(
-		{ Motor(101) }, //motors
+		{ Motor(15) }, //motors
 		{},//no sensors for intake, thus use indexer motor
 		PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 	),
@@ -51,13 +62,19 @@ public:
 		Odometry(Position(0, 0, 0), Position(0, 0, 0)//,//actual position, tracker mech's position
 		//Odom Sensors:
 	)
+
+),
+cata(
+	{ Motor(16)}, //motors
+	{},//no sensors for lift, thus use indexer motor
+	PIDcontroller(2.0, 0.0, 0.0, 10,  10, true, true)//PID
 ){
 	base.odom.pos.X = 0;
 	base.odom.pos.Y = 0;
 	base.odom.pos.heading = 90;
 }
 
-class mechanism indexer, intake, lift;
+class mechanism indexer, intake, lift, cata;
 class chassis base;
 float FWVelGoal = 0;
 public://higher level functions

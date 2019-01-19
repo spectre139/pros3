@@ -6,12 +6,12 @@ using namespace pros;
 #define reversed true
 
 
-#define RFront   	4
-#define LFront    5
-#define LBack     6
-#define RBack     7
-#define LDiff     8
-#define RDiff     9
+#define RFront   	2
+#define LFront    14
+#define LBack     13
+#define RBack     12
+#define LDiff     1
+#define RDiff     11
 
 #define LeftBAvg avg(Motor(LFront).get_position(), Motor(LBack).get_position())
 #define RightBAvg avg(Motor(RFront).get_position(), Motor(RBack).get_position())
